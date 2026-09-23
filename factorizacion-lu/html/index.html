@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Resolución de sistemas lineales mediante factorización LU con el método de Doolittle.">
+  <title>Factorización LU mediante Doolittle</title>
+  <link rel="stylesheet" href="../css/styles.css">
+  <script src="../js/app.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-content">
+      <p class="course-label">Métodos Numéricos - Sesión 6</p>
+      <h1>Factorización LU mediante Doolittle</h1>
+      <p class="subtitle">Balanceo de Carga en Clusters de Servidores</p>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <section class="intro-section" aria-labelledby="system-title">
+      <div class="section-heading">
+        <div>
+          <p class="section-number">01</p>
+          <h2 id="system-title">Sistema del clúster</h2>
+        </div>
+        <p>La matriz de acoplamiento permanece constante mientras los vectores de tráfico cambian.</p>
+      </div>
+
+      <p class="context-summary">
+        El clúster consta de tres microservicios (S<sub>1</sub>, S<sub>2</sub> y S<sub>3</sub>) conectados mediante el modelo lineal A · x = b.
+      </p>
+      <dl class="model-definitions">
+        <div>
+          <dt>A</dt>
+          <dd>Matriz de coeficientes de transferencia y acoplamiento entre servicios.</dd>
+        </div>
+        <div>
+          <dt>b</dt>
+          <dd>Vector de latencias máximas permitidas (SLA) para las peticiones distribuidas.</dd>
+        </div>
+        <div>
+          <dt>x</dt>
+          <dd>Vector de tiempos de cómputo individuales por nodo que se debe determinar.</dd>
+        </div>
+      </dl>
+
+      <div class="equation-list" aria-label="Sistema de ecuaciones">
+        <article class="equation-row">
+          <span class="equation">4x<sub>1</sub> + 2x<sub>2</sub> + x<sub>3</sub> = 14</span>
+          <span class="equation-meaning">Tráfico global</span>
+        </article>
+        <article class="equation-row">
+          <span class="equation">12x<sub>1</sub> + 10x<sub>2</sub> + 5x<sub>3</sub> = 46</span>
+          <span class="equation-meaning">Procesamiento backend</span>
+        </article>
+        <article class="equation-row">
+          <span class="equation">-8x<sub>1</sub> + 8x<sub>2</sub> + 7x<sub>3</sub> = 26</span>
+          <span class="equation-meaning">Consultas a base de datos</span>
+        </article>
+      </div>
+
+      <div class="data-grid">
+        <article class="data-panel">
+          <h3>Matriz A</h3>
+          <div id="matrix-a" class="matrix-host"></div>
+        </article>
+        <article class="data-panel">
+          <h3>Vector b<sub>1</sub></h3>
+          <div id="vector-b1" class="matrix-host"></div>
+        </article>
+        <article class="data-panel">
+          <h3>Vector b<sub>2</sub></h3>
+          <div id="vector-b2" class="matrix-host"></div>
+        </article>
+      </div>
+    </section>
+
+    <div class="action-bar">
+      <div>
+        <p class="action-title">Cálculo completo</p>
+        <p>Factoriza A una vez y resuelve ambos escenarios.</p>
+      </div>
+      <button id="solve-button" type="button">Resolver sistema</button>
+    </div>
+
+    <div id="global-status" class="status-message status-info" role="status" aria-live="polite">
+      Listo para iniciar el cálculo.
+    </div>
+
+    <div id="results" class="results" hidden>
+      <section aria-labelledby="factorization-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-number">02</p>
+            <h2 id="factorization-title">Factorización LU</h2>
+          </div>
+          <p>Doolittle construye una matriz L con diagonal unitaria y una matriz U triangular superior.</p>
+        </div>
+
+        <div class="formula-banner" aria-label="Identidad de factorización">A = L · U</div>
+        <div class="matrix-results-grid">
+          <article class="data-panel">
+            <h3>Matriz L</h3>
+            <div id="matrix-l" class="matrix-host"></div>
+          </article>
+          <article class="data-panel">
+            <h3>Matriz U</h3>
+            <div id="matrix-u" class="matrix-host"></div>
+          </article>
+          <article class="data-panel">
+            <h3>Producto L · U</h3>
+            <div id="matrix-lu" class="matrix-host"></div>
+          </article>
+        </div>
+        <article class="calculation-block" aria-labelledby="doolittle-steps-title">
+          <h3 id="doolittle-steps-title">Desarrollo analítico de Doolittle</h3>
+          <ol id="doolittle-steps" class="calculation-steps"></ol>
+        </article>
+        <div id="factorization-status" class="status-message"></div>
+      </section>
+
+      <section aria-labelledby="scenario-1-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-number">03</p>
+            <h2 id="scenario-1-title">Escenario 1 - Vector b<sub>1</sub></h2>
+          </div>
+          <p>Se resuelven primero L · y<sub>1</sub> = b<sub>1</sub> y después U · x = y<sub>1</sub>.</p>
+        </div>
+        <div id="scenario-1-content" class="scenario-grid"></div>
+        <div class="calculation-columns">
+          <article class="calculation-block">
+            <h3>Sustitución hacia adelante</h3>
+            <ol id="scenario-1-forward-steps" class="calculation-steps"></ol>
+          </article>
+          <article class="calculation-block">
+            <h3>Sustitución hacia atrás</h3>
+            <ol id="scenario-1-backward-steps" class="calculation-steps"></ol>
+          </article>
+        </div>
+        <div id="scenario-1-status" class="status-message"></div>
+      </section>
+
+      <section aria-labelledby="scenario-2-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-number">04</p>
+            <h2 id="scenario-2-title">Escenario 2 - Cambio de tráfico</h2>
+          </div>
+          <p>Se evalúa el nuevo vector sin repetir la factorización.</p>
+        </div>
+        <div class="reuse-notice status-message status-info">
+          Se reutilizan las matrices L y U. No se vuelve a factorizar A.
+        </div>
+        <div id="scenario-2-content" class="scenario-grid"></div>
+        <div class="calculation-columns">
+          <article class="calculation-block">
+            <h3>Sustitución hacia adelante con b<sub>2</sub></h3>
+            <ol id="scenario-2-forward-steps" class="calculation-steps"></ol>
+          </article>
+          <article class="calculation-block">
+            <h3>Sustitución hacia atrás</h3>
+            <ol id="scenario-2-backward-steps" class="calculation-steps"></ol>
+          </article>
+        </div>
+        <div id="scenario-2-status" class="status-message"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <p>Métodos Numéricos · Jade Sanchez</p>
+  </footer>
+</body>
+</html>
