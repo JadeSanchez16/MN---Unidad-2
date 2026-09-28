@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Resolución de un sistema lineal de cuatro servidores mediante el método de Jacobi.">
+  <title>Método de Jacobi - Sesión 7</title>
+  <link rel="stylesheet" href="../css/styles.css">
+  <script src="../js/app.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-content">
+      <nav class="module-nav" aria-label="Navegación entre sesiones">
+        <a href="../../index.html">Inicio</a>
+        <a href="../../factorizacion-lu/html/index.html">Sesión 6: LU</a>
+        <span aria-current="page">Sesión 7: Jacobi</span>
+      </nav>
+      <p class="course-label">Métodos Numéricos - Sesión 7</p>
+      <h1>Solución mediante el método de Jacobi</h1>
+      <p class="subtitle">Balance de carga en un clúster de cuatro servidores</p>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <section class="intro-section" aria-labelledby="system-title">
+      <div class="section-heading">
+        <div>
+          <p class="section-number">01</p>
+          <h2 id="system-title">Sistema del clúster</h2>
+        </div>
+        <p>Cada incógnita representa miles de peticiones por minuto asignadas a un servidor.</p>
+      </div>
+
+      <div class="equation-list" aria-label="Sistema de ecuaciones">
+        <div class="equation-row">10x<sub>1</sub> - 2x<sub>2</sub> - x<sub>3</sub> = 15</div>
+        <div class="equation-row">-x<sub>1</sub> + 8x<sub>2</sub> - 2x<sub>4</sub> = 18</div>
+        <div class="equation-row">-2x<sub>1</sub> + 12x<sub>3</sub> - 3x<sub>4</sub> = 25</div>
+        <div class="equation-row">-x<sub>2</sub> - 2x<sub>3</sub> + 9x<sub>4</sub> = 20</div>
+      </div>
+
+      <div class="data-grid">
+        <article class="data-panel">
+          <h3>Matriz A</h3>
+          <div id="matrix-a" class="matrix-host"></div>
+        </article>
+        <article class="data-panel">
+          <h3>Vector b</h3>
+          <div id="vector-b" class="matrix-host"></div>
+        </article>
+        <article class="data-panel">
+          <h3>Vector x<sup>(0)</sup></h3>
+          <div id="vector-x0" class="matrix-host"></div>
+        </article>
+        <article class="data-panel parameter-panel">
+          <h3>Tolerancia</h3>
+          <p id="tolerance-value" class="parameter-value"></p>
+          <p>Error relativo en norma infinito</p>
+        </article>
+      </div>
+    </section>
+
+    <section aria-labelledby="convergence-title">
+      <div class="section-heading">
+        <div>
+          <p class="section-number">02</p>
+          <h2 id="convergence-title">Demostración de convergencia</h2>
+        </div>
+        <p>Se verifica el criterio suficiente de dominancia diagonal estricta por filas.</p>
+      </div>
+
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">Fila</th>
+              <th scope="col">|a<sub>ii</sub>|</th>
+              <th scope="col">Σ |a<sub>ij</sub>|, j ≠ i</th>
+              <th scope="col">Comprobación</th>
+            </tr>
+          </thead>
+          <tbody id="dominance-body"></tbody>
+        </table>
+      </div>
+      <div id="dominance-status" class="status-message" role="status"></div>
+    </section>
+
+    <section aria-labelledby="formulas-title">
+      <div class="section-heading">
+        <div>
+          <p class="section-number">03</p>
+          <h2 id="formulas-title">Esquema iterativo</h2>
+        </div>
+        <p>Cada componente nuevo usa exclusivamente valores de la iteración anterior.</p>
+      </div>
+
+      <div class="formula-grid">
+        <div>x<sub>1</sub><sup>(k+1)</sup> = (15 + 2x<sub>2</sub><sup>(k)</sup> + x<sub>3</sub><sup>(k)</sup>) / 10</div>
+        <div>x<sub>2</sub><sup>(k+1)</sup> = (18 + x<sub>1</sub><sup>(k)</sup> + 2x<sub>4</sub><sup>(k)</sup>) / 8</div>
+        <div>x<sub>3</sub><sup>(k+1)</sup> = (25 + 2x<sub>1</sub><sup>(k)</sup> + 3x<sub>4</sub><sup>(k)</sup>) / 12</div>
+        <div>x<sub>4</sub><sup>(k+1)</sup> = (20 + x<sub>2</sub><sup>(k)</sup> + 2x<sub>3</sub><sup>(k)</sup>) / 9</div>
+      </div>
+
+      <div class="error-formula">
+        E<sub>k</sub> = ||x<sup>(k)</sup> - x<sup>(k-1)</sup>||<sub>∞</sub> / ||x<sup>(k)</sup>||<sub>∞</sub>
+      </div>
+
+      <div class="action-bar">
+        <div>
+          <p class="action-title">Cálculo iterativo completo</p>
+          <p>Inicia en el vector cero y se detiene cuando E<sub>k</sub> ≤ 10<sup>-4</sup>.</p>
+        </div>
+        <button id="solve-button" type="button">Ejecutar Jacobi</button>
+      </div>
+      <div id="global-status" class="status-message status-info" role="status" aria-live="polite">
+        Listo para iniciar el cálculo.
+      </div>
+    </section>
+
+    <div id="results" hidden>
+      <section aria-labelledby="history-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-number">04</p>
+            <h2 id="history-title">Historial de iteraciones</h2>
+          </div>
+          <p>El vector inicial se muestra como k = 0; el error comienza en la primera actualización.</p>
+        </div>
+
+        <div class="table-scroll">
+          <table class="data-table iteration-table">
+            <thead>
+              <tr>
+                <th scope="col">k</th>
+                <th scope="col">x<sub>1</sub><sup>(k)</sup></th>
+                <th scope="col">x<sub>2</sub><sup>(k)</sup></th>
+                <th scope="col">x<sub>3</sub><sup>(k)</sup></th>
+                <th scope="col">x<sub>4</sub><sup>(k)</sup></th>
+                <th scope="col">Error relativo</th>
+              </tr>
+            </thead>
+            <tbody id="iteration-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section aria-labelledby="solution-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-number">05</p>
+            <h2 id="solution-title">Solución final aproximada</h2>
+          </div>
+          <p>Resultado obtenido al satisfacer el criterio de parada solicitado.</p>
+        </div>
+
+        <div class="solution-layout">
+          <article class="solution-vector-panel">
+            <h3>Vector solución</h3>
+            <div id="final-vector" class="matrix-host"></div>
+          </article>
+          <dl class="result-list">
+            <div><dt>Iteraciones</dt><dd id="final-iterations"></dd></div>
+            <div><dt>Error final</dt><dd id="final-error"></dd></div>
+            <div><dt>Tolerancia</dt><dd id="final-tolerance"></dd></div>
+          </dl>
+        </div>
+        <div id="final-status" class="status-message" role="status"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <p>Métodos Numéricos · Jade Sanchez</p>
+  </footer>
+</body>
+</html>
