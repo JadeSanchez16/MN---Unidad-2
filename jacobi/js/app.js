@@ -79,14 +79,15 @@ function analizarDominanciaDiagonal(matriz) {
 
   const filas = matriz.map((fila, indice) => {
     const diagonal = Math.abs(fila[indice]);
-    const sumaNoDiagonal = fila.reduce(
-      (suma, valor, columna) => suma + (columna === indice ? 0 : Math.abs(valor)),
-      0
-    );
+    const terminosNoDiagonales = fila
+      .filter((_, columna) => columna !== indice)
+      .map((valor) => Math.abs(valor));
+    const sumaNoDiagonal = terminosNoDiagonales.reduce((suma, valor) => suma + valor, 0);
 
     return {
       fila: indice + 1,
       diagonal,
+      terminosNoDiagonales,
       sumaNoDiagonal,
       dominante: diagonal > sumaNoDiagonal
     };
@@ -249,6 +250,7 @@ function mostrarDominancia(analisis) {
     const valores = [
       detalle.fila,
       formatearNumero(detalle.diagonal, 0),
+      detalle.terminosNoDiagonales.map((valor) => formatearNumero(valor, 0)).join(" + "),
       formatearNumero(detalle.sumaNoDiagonal, 0),
       `${formatearNumero(detalle.diagonal, 0)} > ${formatearNumero(detalle.sumaNoDiagonal, 0)}`
     ];
@@ -268,14 +270,14 @@ function mostrarDominancia(analisis) {
   const estado = document.getElementById("dominance-status");
   estado.className = `status-message ${analisis.esEstrictamenteDominante ? "status-success" : "status-error"}`;
   estado.textContent = analisis.esEstrictamenteDominante
-    ? "La matriz es estrictamente diagonal dominante por filas; Jacobi converge para el vector inicial dado."
+    ? "Las cuatro desigualdades se cumplen: A es estrictamente diagonal dominante por filas."
     : "La matriz no es estrictamente diagonal dominante; este criterio no garantiza la convergencia.";
 }
 
 function mostrarHistorial(resultado) {
   const cuerpo = document.getElementById("iteration-body");
   const filaInicial = document.createElement("tr");
-  ["0", ...X_INICIAL.map(() => "0.000000"), "-"] .forEach((valor) => {
+  ["0", ...X_INICIAL.map(() => "0.000000"), "-"].forEach((valor) => {
     const celda = document.createElement("td");
     celda.textContent = valor;
     filaInicial.append(celda);
@@ -333,7 +335,7 @@ function ejecutarJacobi() {
     resultados.hidden = false;
     actualizarEstadoGlobal(
       resultado.convergio
-        ? `Cálculo terminado correctamente en ${resultado.iteraciones} iteraciones.`
+        ? `Cálculo terminado correctamente`
         : "El cálculo terminó sin alcanzar la tolerancia.",
       resultado.convergio
     );

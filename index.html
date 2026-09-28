@@ -3,16 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Programa acumulativo de Métodos Numéricos para resolver sistemas de ecuaciones lineales.">
+  <meta name="description" content="Programa académico acumulativo de Métodos Numéricos para la resolución de sistemas de ecuaciones lineales.">
   <title>Métodos Numéricos - Unidad 2</title>
   <link rel="stylesheet" href="./css/home.css">
 </head>
 <body>
   <header class="site-header">
+    <div class="institution-bar">
+      <div class="institution-content">
+        <span>Universidad Peruana Unión</span>
+        <span>Unidad 2 · Sistemas de ecuaciones lineales</span>
+      </div>
+    </div>
+
     <div class="header-content">
-      <p class="course-label">Métodos Numéricos</p>
-      <h1>Unidad 2: sistemas de ecuaciones lineales</h1>
-      <p class="subtitle">Selecciona una sesión para abrir el procedimiento completo y sus resultados verificables.</p>
+      <div class="header-copy">
+        <p class="course-label">Programa académico acumulativo</p>
+        <h1>Métodos Numéricos</h1>
+        <p class="subtitle">Unidad 2 · Solución de sistemas de ecuaciones lineales</p>
+      </div>
+
+      <dl class="course-summary" aria-label="Datos del proyecto">
+        <div>
+          <dt>Curso</dt>
+          <dd>Métodos Numéricos</dd>
+        </div>
+        <div>
+          <dt>Estudiante</dt>
+          <dd>Jade Sanchez</dd>
+        </div>
+        <div>
+          <dt>Sesiones disponibles</dt>
+          <dd>2 módulos</dd>
+        </div>
+      </dl>
     </div>
   </header>
 
@@ -20,36 +44,52 @@
     <section class="module-list" aria-labelledby="sessions-title">
       <div class="section-heading">
         <div>
-          <p class="section-number">Programa acumulativo</p>
+          <p class="section-number">Contenido de la unidad</p>
           <h2 id="sessions-title">Sesiones implementadas</h2>
         </div>
-        <p>Cada módulo conserva su propio método, datos y comprobaciones.</p>
+        <p>Selecciona una sesión para consultar el planteamiento, procedimiento numérico, verificaciones y resultados.</p>
+      </div>
+
+      <div class="module-header" aria-hidden="true">
+        <span>Sesión</span>
+        <span>Método y alcance</span>
+        <span>Estado</span>
+        <span>Acceso</span>
       </div>
 
       <article class="module-row">
-        <div class="module-number" aria-hidden="true">06</div>
+        <div class="module-session">
+          <span class="module-number">06</span>
+          <span class="module-type">Método directo</span>
+        </div>
         <div class="module-copy">
-          <p class="method-label">Método directo</p>
           <h3>Factorización LU mediante Doolittle</h3>
           <p>Factorización de una matriz y resolución de dos escenarios mediante sustitución hacia adelante y hacia atrás.</p>
         </div>
-        <a class="module-link" href="./factorizacion-lu/html/index.html">Abrir sesión 6</a>
+        <span class="module-status">Implementado</span>
+        <a class="module-link" href="./factorizacion-lu/html/index.html">Abrir sesión</a>
       </article>
 
       <article class="module-row current-module">
-        <div class="module-number" aria-hidden="true">07</div>
-        <div class="module-copy">
-          <p class="method-label">Método iterativo</p>
-          <h3>Método de Jacobi</h3>
-          <p>Balance de carga en cuatro servidores, demostración de convergencia e historial completo de iteraciones.</p>
+        <div class="module-session">
+          <span class="module-number">07</span>
+          <span class="module-type">Método iterativo</span>
         </div>
-        <a class="module-link" href="./jacobi/html/index.html">Abrir sesión 7</a>
+        <div class="module-copy">
+          <h3>Método de Jacobi</h3>
+          <p>Balance de carga en cuatro servidores, demostración formal de convergencia e historial completo de iteraciones.</p>
+        </div>
+        <span class="module-status">Implementado</span>
+        <a class="module-link" href="./jacobi/html/index.html">Abrir sesión</a>
       </article>
     </section>
   </main>
 
   <footer>
-    <p>Métodos Numéricos · Jade Sanchez</p>
+    <div class="footer-content">
+      <p>Métodos Numéricos · Unidad 2</p>
+      <p>Jade Sanchez</p>
+    </div>
   </footer>
 </body>
 </html>

@@ -69,12 +69,18 @@
         <p>Se verifica el criterio suficiente de dominancia diagonal estricta por filas.</p>
       </div>
 
+      <div class="criterion-block" aria-label="Criterio de dominancia diagonal estricta">
+        <span>Condición para cada fila i</span>
+        <strong>|a<sub>ii</sub>| &gt; Σ<sub>j ≠ i</sub> |a<sub>ij</sub>|</strong>
+      </div>
+
       <div class="table-scroll">
         <table class="data-table">
           <thead>
             <tr>
               <th scope="col">Fila</th>
               <th scope="col">|a<sub>ii</sub>|</th>
+              <th scope="col">Desarrollo de Σ |a<sub>ij</sub>|</th>
               <th scope="col">Σ |a<sub>ij</sub>|, j ≠ i</th>
               <th scope="col">Comprobación</th>
             </tr>
@@ -83,6 +89,9 @@
         </table>
       </div>
       <div id="dominance-status" class="status-message" role="status"></div>
+      <p class="theorem-note">
+        <strong>Garantía teórica:</strong> la dominancia diagonal estricta es una condición suficiente para que el método de Jacobi converja hacia la solución única desde cualquier vector inicial; por tanto, también converge desde x<sup>(0)</sup> = [0, 0, 0, 0]<sup>T</sup>.
+      </p>
     </section>
 
     <section aria-labelledby="formulas-title">

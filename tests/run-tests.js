@@ -24,6 +24,10 @@ function probarJacobi() {
     dominancia.filas.map(({ diagonal, sumaNoDiagonal }) => [diagonal, sumaNoDiagonal]),
     [[10, 3], [8, 3], [12, 5], [9, 3]]
   );
+  assert.deepEqual(
+    dominancia.filas.map(({ terminosNoDiagonales }) => terminosNoDiagonales),
+    [[2, 1, 0], [1, 0, 2], [2, 0, 3], [0, 1, 2]]
+  );
 
   const primera = jacobi.iterarJacobi(
     jacobi.A_JACOBI,
@@ -33,6 +37,13 @@ function probarJacobi() {
   const primeraEsperada = [1.5, 2.25, 25 / 12, 20 / 9];
   primera.forEach((valor, indice) => {
     assert.ok(Math.abs(valor - primeraEsperada[indice]) < 1e-12);
+  });
+
+  // La segunda iteración detecta si se reutilizaran valores nuevos como en Gauss-Seidel.
+  const segunda = jacobi.iterarJacobi(jacobi.A_JACOBI, jacobi.B_JACOBI, primera);
+  const segundaEsperada = [2.158333333333333, 2.9930555555555554, 2.888888888888889, 2.935185185185185];
+  segunda.forEach((valor, indice) => {
+    assert.ok(Math.abs(valor - segundaEsperada[indice]) < 1e-12);
   });
 
   const resultado = jacobi.resolverJacobi(
