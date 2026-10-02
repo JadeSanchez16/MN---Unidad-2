@@ -189,6 +189,32 @@ section {
   font-size: 1.08rem;
 }
 
+.input-actions {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+
+.input-actions span {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.secondary-button {
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 1px solid var(--navy);
+  background: transparent;
+  color: var(--navy);
+}
+
+.secondary-button:hover {
+  background: #e8eef2;
+}
+
 input {
   width: 100%;
   min-width: 130px;
@@ -538,6 +564,11 @@ footer p {
   .input-with-unit input,
   button {
     width: 100%;
+  }
+
+  .input-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 

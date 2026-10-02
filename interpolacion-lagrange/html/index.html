@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Interpolación de Lagrange de cuatro nodos para estimar la latencia de un microservicio.">
+  <meta name="description" content="Interpolación de Lagrange con nodos dinámicos para estimar la latencia de un microservicio.">
   <title>Interpolación de Lagrange - Sesión 8</title>
   <link rel="stylesheet" href="../css/styles.css">
   <script src="../js/lagrange.js" defer></script>
@@ -31,7 +31,7 @@
           <p class="section-number">01</p>
           <h2 id="input-title">Entrada de datos</h2>
         </div>
-        <p>Los cuatro nodos y el punto de evaluación pueden modificarse para ejecutar nuevos cálculos.</p>
+        <p>Los nodos y el punto de evaluación pueden modificarse para ejecutar nuevos cálculos.</p>
       </div>
 
       <form id="lagrange-form" novalidate>
@@ -44,29 +44,13 @@
                 <th scope="col">Latencia y (ms)</th>
               </tr>
             </thead>
-            <tbody>
-              <tr>
-                <th scope="row">x<sub>0</sub></th>
-                <td><label class="visually-hidden" for="x-0">Memoria del nodo 0</label><input id="x-0" type="number" step="any" required></td>
-                <td><label class="visually-hidden" for="y-0">Latencia del nodo 0</label><input id="y-0" type="number" step="any" required></td>
-              </tr>
-              <tr>
-                <th scope="row">x<sub>1</sub></th>
-                <td><label class="visually-hidden" for="x-1">Memoria del nodo 1</label><input id="x-1" type="number" step="any" required></td>
-                <td><label class="visually-hidden" for="y-1">Latencia del nodo 1</label><input id="y-1" type="number" step="any" required></td>
-              </tr>
-              <tr>
-                <th scope="row">x<sub>2</sub></th>
-                <td><label class="visually-hidden" for="x-2">Memoria del nodo 2</label><input id="x-2" type="number" step="any" required></td>
-                <td><label class="visually-hidden" for="y-2">Latencia del nodo 2</label><input id="y-2" type="number" step="any" required></td>
-              </tr>
-              <tr>
-                <th scope="row">x<sub>3</sub></th>
-                <td><label class="visually-hidden" for="x-3">Memoria del nodo 3</label><input id="x-3" type="number" step="any" required></td>
-                <td><label class="visually-hidden" for="y-3">Latencia del nodo 3</label><input id="y-3" type="number" step="any" required></td>
-              </tr>
-            </tbody>
+            <tbody id="nodes-body"></tbody>
           </table>
+        </div>
+
+        <div class="input-actions">
+          <button id="add-node-button" class="secondary-button" type="button">Agregar nodo</button>
+          <span id="node-count" aria-live="polite"></span>
         </div>
 
         <div class="calculation-bar">
@@ -86,13 +70,13 @@
           <p class="section-number">02</p>
           <h2 id="result-title">Resultado interpolado</h2>
         </div>
-        <p>Latencia media estimada por el polinomio cúbico construido con los cuatro nodos.</p>
+        <p>Latencia media estimada por el polinomio construido con los nodos ingresados.</p>
       </div>
 
       <div class="result-band" aria-live="polite">
         <div>
           <span class="result-label">Evaluación</span>
-          <strong id="evaluation-label">P₃(x)</strong>
+          <strong id="evaluation-label">Pₙ(x)</strong>
         </div>
         <div>
           <span class="result-label">Latencia estimada</span>
@@ -112,7 +96,7 @@
 
       <div class="formula-strip">
         <span>Fórmula aplicada</span>
-        <strong>P<sub>3</sub>(x<sub>eval</sub>) = Σ y<sub>k</sub>L<sub>k</sub>(x<sub>eval</sub>)</strong>
+        <strong id="applied-formula">P<sub>n</sub>(x<sub>eval</sub>) = Σ y<sub>k</sub>L<sub>k</sub>(x<sub>eval</sub>)</strong>
       </div>
 
       <div class="table-scroll procedure-scroll">
@@ -142,17 +126,17 @@
           <p class="section-number">04</p>
           <h2 id="chart-title">Curva de interpolación</h2>
         </div>
-        <p>Polinomio P<sub>3</sub>(x) representado en el intervalo [2, 12].</p>
+        <p id="chart-description-text">Polinomio P<sub>3</sub>(x) representado en el intervalo [2, 12].</p>
       </div>
 
       <div class="chart-legend" aria-hidden="true">
-        <span><i class="legend-line"></i>Polinomio P<sub>3</sub>(x)</span>
+        <span><i class="legend-line"></i>Polinomio <span id="legend-polynomial">P<sub>3</sub>(x)</span></span>
         <span><i class="legend-node"></i>Nodos experimentales</span>
         <span><i class="legend-evaluation"></i>Punto interpolado</span>
       </div>
       <div class="chart-frame">
         <svg id="lagrange-chart" viewBox="0 0 900 500" role="img" aria-labelledby="chart-title chart-description">
-          <desc id="chart-description">Curva del polinomio interpolador, cuatro nodos experimentales y punto evaluado.</desc>
+          <desc id="chart-description">Curva del polinomio interpolador, nodos experimentales y punto evaluado.</desc>
         </svg>
       </div>
       <p id="chart-note" class="chart-note"></p>

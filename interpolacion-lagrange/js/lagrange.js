@@ -25,8 +25,8 @@
   }
 
   function validarNodos(nodos) {
-    if (!Array.isArray(nodos) || nodos.length !== 4) {
-      throw new ValidationError("Se requieren exactamente cuatro nodos (x, y).");
+    if (!Array.isArray(nodos) || nodos.length < 2) {
+      throw new ValidationError("Se requieren al menos dos nodos (x, y).");
     }
 
     nodos.forEach((nodo, indice) => {
@@ -41,7 +41,7 @@
       for (let j = i + 1; j < nodos.length; j += 1) {
         const escala = Math.max(1, Math.abs(nodos[i].x), Math.abs(nodos[j].x));
         if (Math.abs(nodos[i].x - nodos[j].x) <= EPSILON_NUMERICO * escala) {
-          throw new ValidationError("Los cuatro valores de x deben ser distintos.");
+          throw new ValidationError("Todos los valores de x deben ser distintos.");
         }
       }
     }

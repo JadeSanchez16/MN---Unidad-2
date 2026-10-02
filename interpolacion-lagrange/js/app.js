@@ -37,10 +37,65 @@ function formatearDetalle(valor) {
   return formatearNumero(valor).replace(/0+$/, "").replace(/\.$/, "");
 }
 
+function convertirSubindice(valor) {
+  const digitos = { "0": "₀", "1": "₁", "2": "₂", "3": "₃", "4": "₄", "5": "₅", "6": "₆", "7": "₇", "8": "₈", "9": "₉" };
+  return String(valor).split("").map((digito) => digitos[digito]).join("");
+}
+
+function nombrePolinomio(cantidadNodos) {
+  return `P${convertirSubindice(cantidadNodos - 1)}`;
+}
+
 function crearCelda(fila, texto) {
   const celda = document.createElement("td");
   celda.textContent = texto;
   fila.append(celda);
+}
+
+function crearFilaNodo(indice, x = "", y = "") {
+  const fila = document.createElement("tr");
+  fila.className = "node-row";
+
+  const encabezado = document.createElement("th");
+  encabezado.scope = "row";
+  encabezado.textContent = `x${convertirSubindice(indice)}`;
+  fila.append(encabezado);
+
+  [["x", x, "Memoria"], ["y", y, "Latencia"]].forEach(([variable, valor, descripcion]) => {
+    const celda = document.createElement("td");
+    const etiqueta = document.createElement("label");
+    const entrada = document.createElement("input");
+    const id = `${variable}-${indice}`;
+    etiqueta.className = "visually-hidden";
+    etiqueta.htmlFor = id;
+    etiqueta.textContent = `${descripcion} del nodo ${indice}`;
+    entrada.id = id;
+    entrada.className = `node-${variable}`;
+    entrada.type = "number";
+    entrada.step = "any";
+    entrada.required = true;
+    entrada.value = valor === "" ? "" : String(valor);
+    celda.append(etiqueta, entrada);
+    fila.append(celda);
+  });
+
+  return fila;
+}
+
+function actualizarConteoNodos() {
+  const cantidad = document.querySelectorAll("#nodes-body .node-row").length;
+  document.getElementById("node-count").textContent =
+    `${cantidad} nodos · polinomio ${nombrePolinomio(cantidad)}`;
+  return cantidad;
+}
+
+function agregarFilaNodo(x = "", y = "") {
+  const cuerpo = document.getElementById("nodes-body");
+  const indice = cuerpo.children.length;
+  const fila = crearFilaNodo(indice, x, y);
+  cuerpo.append(fila);
+  actualizarConteoNodos();
+  return fila.querySelector(".node-x");
 }
 
 function crearElementoSvg(nombre, atributos = {}) {
@@ -52,20 +107,21 @@ function crearElementoSvg(nombre, atributos = {}) {
 }
 
 function leerFormulario() {
-  const nodos = Array.from({ length: 4 }, (_, indice) => ({
-    x: Number(document.getElementById(`x-${indice}`).value),
-    y: Number(document.getElementById(`y-${indice}`).value)
-  }));
-  const xEvaluar = Number(document.getElementById("x-eval").value);
-
+  const filas = Array.from(document.querySelectorAll("#nodes-body .node-row"));
+  const campoEvaluacion = document.getElementById("x-eval");
   const campos = [
-    ...Array.from({ length: 4 }, (_, indice) => document.getElementById(`x-${indice}`)),
-    ...Array.from({ length: 4 }, (_, indice) => document.getElementById(`y-${indice}`)),
-    document.getElementById("x-eval")
+    ...filas.flatMap((fila) => [fila.querySelector(".node-x"), fila.querySelector(".node-y")]),
+    campoEvaluacion
   ];
   if (campos.some((campo) => campo.value.trim() === "")) {
-    throw new ValidationError("Completa los cuatro nodos y el punto a evaluar.");
+    throw new ValidationError("Completa todos los nodos y el punto a evaluar.");
   }
+
+  const nodos = filas.map((fila) => ({
+    x: Number(fila.querySelector(".node-x").value),
+    y: Number(fila.querySelector(".node-y").value)
+  }));
+  const xEvaluar = Number(campoEvaluacion.value);
 
   validarNodos(nodos);
   validarNumero(xEvaluar, "El punto a evaluar");
@@ -80,7 +136,7 @@ function actualizarEstado(mensaje, tipo) {
 
 function mostrarProcedimiento(resultado, xEvaluar) {
   const cuerpo = document.getElementById("procedure-body");
-  const subindices = ["₀", "₁", "₂", "₃"];
+  const polinomio = nombrePolinomio(resultado.terminos.length);
   cuerpo.replaceChildren();
 
   resultado.terminos.forEach((termino) => {
@@ -98,10 +154,11 @@ function mostrarProcedimiento(resultado, xEvaluar) {
       .map(({ denominador }) => formatearDetalle(denominador))
       .join(" · ");
 
-    crearCelda(fila, `Paso ${termino.indice + 1}: L${subindices[termino.indice]}`);
+    const subindice = convertirSubindice(termino.indice);
+    crearCelda(fila, `Paso ${termino.indice + 1}: L${subindice}`);
     crearCelda(
       fila,
-      `L${subindices[termino.indice]}(${formatearDetalle(xEvaluar)}) = [${numeradorSimbolico}] / [${denominadorSimbolico}]`
+      `L${subindice}(${formatearDetalle(xEvaluar)}) = [${numeradorSimbolico}] / [${denominadorSimbolico}]`
     );
     crearCelda(
       fila,
@@ -122,13 +179,33 @@ function mostrarProcedimiento(resultado, xEvaluar) {
     .map(({ y, base }) => `${formatearDetalle(y)}(${formatearNumero(base)})`)
     .join(" + ");
   document.getElementById("final-sum").textContent =
-    `P₃(${formatearDetalle(xEvaluar)}) = ${sumaContribuciones} = ${formatearNumero(resultado.valor)} ms`;
+    `${polinomio}(${formatearDetalle(xEvaluar)}) = ${sumaContribuciones} = ${formatearNumero(resultado.valor)} ms`;
 }
 
 function limpiarProcedimiento() {
   document.getElementById("procedure-body").replaceChildren();
   document.getElementById("basis-check").textContent = "";
   document.getElementById("final-sum").textContent = "";
+}
+
+function actualizarEtiquetasPolinomio(cantidadNodos, xEvaluar = null) {
+  const polinomio = nombrePolinomio(cantidadNodos);
+  const argumento = xEvaluar === null ? "x" : formatearNumero(xEvaluar, 4);
+  document.getElementById("evaluation-label").textContent = `${polinomio}(${argumento})`;
+  document.getElementById("applied-formula").textContent =
+    `${polinomio}(x_eval) = Σ yₖLₖ(x_eval)`;
+  document.getElementById("legend-polynomial").textContent = `${polinomio}(x)`;
+  document.getElementById("chart-description-text").textContent =
+    `Polinomio ${polinomio}(x) representado en el intervalo [2, 12].`;
+}
+
+function limpiarSalidas() {
+  const cantidadNodos = document.querySelectorAll("#nodes-body .node-row").length;
+  actualizarEtiquetasPolinomio(cantidadNodos);
+  document.getElementById("interpolated-value").textContent = "-";
+  limpiarProcedimiento();
+  document.getElementById("lagrange-chart").replaceChildren();
+  document.getElementById("chart-note").textContent = "";
 }
 
 function dibujarGrafica(nodos, xEvaluar, valorEvaluado) {
@@ -160,7 +237,8 @@ function dibujarGrafica(nodos, xEvaluar, valorEvaluado) {
 
   svg.replaceChildren();
   const descripcion = crearElementoSvg("desc", { id: "chart-description" });
-  descripcion.textContent = "Curva del polinomio interpolador, cuatro nodos experimentales y punto evaluado.";
+  descripcion.textContent =
+    `Curva del polinomio interpolador, ${nodos.length} nodos experimentales y punto evaluado.`;
   svg.append(descripcion);
   svg.append(crearElementoSvg("rect", {
     x: margen.izquierda,
@@ -326,35 +404,39 @@ function ejecutarInterpolacion(evento) {
     const { nodos, xEvaluar } = leerFormulario();
     const resultado = interpolarLagrange(nodos, xEvaluar);
 
-    document.getElementById("evaluation-label").textContent = `P₃(${formatearNumero(xEvaluar, 4)})`;
+    actualizarEtiquetasPolinomio(nodos.length, xEvaluar);
     document.getElementById("interpolated-value").textContent = formatearNumero(resultado.valor);
     mostrarProcedimiento(resultado, xEvaluar);
     dibujarGrafica(nodos, xEvaluar, resultado.valor);
-    actualizarEstado("Interpolación calculada correctamente con los cuatro nodos.", "success");
+    actualizarEstado(`Interpolación calculada correctamente con ${nodos.length} nodos.`, "success");
   } catch (error) {
     if (!(error instanceof ValidationError)) {
       console.error(error);
     }
-    document.getElementById("evaluation-label").textContent = "P₃(x)";
-    document.getElementById("interpolated-value").textContent = "-";
-    limpiarProcedimiento();
-    document.getElementById("lagrange-chart").replaceChildren();
-    document.getElementById("chart-note").textContent = "";
+    limpiarSalidas();
     actualizarEstado(error.message, "error");
   }
 }
 
 function cargarDatosIniciales() {
-  NODOS_INICIALES.forEach(({ x, y }, indice) => {
-    document.getElementById(`x-${indice}`).value = String(x);
-    document.getElementById(`y-${indice}`).value = String(y);
+  document.getElementById("nodes-body").replaceChildren();
+  NODOS_INICIALES.forEach(({ x, y }) => {
+    agregarFilaNodo(x, y);
   });
   document.getElementById("x-eval").value = String(PUNTO_EVALUACION_INICIAL);
+}
+
+function agregarNodo() {
+  const entrada = agregarFilaNodo();
+  limpiarSalidas();
+  actualizarEstado("Nuevo nodo agregado. Completa sus valores para volver a calcular.", "info");
+  entrada.focus();
 }
 
 function iniciarAplicacion() {
   cargarDatosIniciales();
   document.getElementById("lagrange-form").addEventListener("submit", ejecutarInterpolacion);
+  document.getElementById("add-node-button").addEventListener("click", agregarNodo);
   ejecutarInterpolacion();
 }
 

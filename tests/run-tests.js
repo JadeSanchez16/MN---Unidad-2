@@ -140,6 +140,16 @@ function probarLagrange() {
   const evaluacionCubica = lagrange.interpolarLagrange(nodosCubicosDesordenados, 1.25);
   assert.ok(Math.abs(evaluacionCubica.valor - polinomioCubico(1.25)) < 1e-12);
 
+  const polinomioCuartico = (x) => x ** 4 - 2 * x ** 2 + 3 * x + 1;
+  const nodosCuarticos = [-2, -1, 0, 1, 2].map((x) => ({
+    x,
+    y: polinomioCuartico(x)
+  }));
+  const evaluacionCuartica = lagrange.interpolarLagrange(nodosCuarticos, 0.5);
+  assert.ok(Math.abs(evaluacionCuartica.valor - polinomioCuartico(0.5)) < 1e-12);
+  assert.equal(evaluacionCuartica.terminos.length, 5);
+  assert.ok(Math.abs(evaluacionCuartica.bases.reduce((suma, base) => suma + base, 0) - 1) < 1e-12);
+
   assert.throws(
     () => lagrange.interpolarLagrange([
       { x: 2, y: 1 },
@@ -151,7 +161,7 @@ function probarLagrange() {
   );
   assert.throws(
     () => lagrange.interpolarLagrange([{ x: 0, y: 0 }], 1),
-    /exactamente cuatro nodos/
+    /al menos dos nodos/
   );
   assert.throws(
     () => lagrange.interpolarLagrange([
@@ -192,8 +202,8 @@ function probarLagrange() {
   );
 
   assert.match(cuerpoInterpolador, /for \(let k = 0;[\s\S]*for \(let i = 0;/);
-  assert.equal((html.match(/id="x-[0-3]"/g) || []).length, 4);
-  assert.equal((html.match(/id="y-[0-3]"/g) || []).length, 4);
+  assert.equal((html.match(/id="nodes-body"/g) || []).length, 1);
+  assert.equal((html.match(/id="add-node-button"/g) || []).length, 1);
   assert.equal((html.match(/id="x-eval"/g) || []).length, 1);
   assert.equal((html.match(/id="procedure-body"/g) || []).length, 1);
   assert.equal((html.match(/id="basis-check"/g) || []).length, 1);
