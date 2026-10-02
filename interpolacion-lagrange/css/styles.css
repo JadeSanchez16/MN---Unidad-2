@@ -336,6 +336,98 @@ button:focus-visible,
   font-size: 0.9rem;
 }
 
+.formula-strip {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-left: 5px solid var(--gold);
+  background: var(--navy-deep);
+  color: #fff;
+}
+
+.formula-strip span {
+  color: #cfdae3;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.formula-strip strong {
+  font-family: Cambria, Georgia, serif;
+  font-size: 1.1rem;
+}
+
+.procedure-scroll {
+  margin-top: 18px;
+}
+
+.procedure-table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.procedure-table th,
+.procedure-table td {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.procedure-table thead th {
+  background: var(--navy-deep);
+  color: #fff;
+  font-size: 0.86rem;
+}
+
+.procedure-table tbody tr:nth-child(even) {
+  background: #f8fafb;
+}
+
+.procedure-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.procedure-table td:first-child,
+.procedure-table td:nth-last-child(-n + 2) {
+  color: var(--navy-deep);
+  font-family: Cambria, Georgia, serif;
+  font-weight: 700;
+}
+
+.procedure-table td:nth-child(2) {
+  min-width: 390px;
+}
+
+.procedure-summary {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+  padding: 20px 22px;
+  border-left: 5px solid var(--gold);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.procedure-summary p,
+.procedure-summary strong {
+  margin: 0;
+}
+
+.procedure-summary p {
+  color: var(--muted);
+}
+
+.procedure-summary strong {
+  color: var(--navy-deep);
+  font-family: Cambria, Georgia, serif;
+  font-size: 1.2rem;
+}
+
 .chart-legend {
   display: flex;
   flex-wrap: wrap;
@@ -429,6 +521,12 @@ footer p {
   .result-band > div + div {
     border-top: 1px solid var(--line);
     border-left: 0;
+  }
+
+  .formula-strip {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
   }
 
   .calculation-bar {

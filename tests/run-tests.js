@@ -99,6 +99,24 @@ function probarLagrange() {
     assert.ok(Math.abs(base - basesEsperadas[indice]) < 1e-12);
   });
   assert.ok(Math.abs(resultado.bases.reduce((suma, base) => suma + base, 0) - 1) < 1e-12);
+  assert.equal(resultado.terminos.length, 4);
+  assert.deepEqual(
+    resultado.terminos.map(({ numerador, denominador, contribucion }) => [
+      numerador,
+      denominador,
+      contribucion
+    ]),
+    [
+      [24, -120, -30],
+      [48, 64, 63.75],
+      [-48, -96, 25],
+      [-16, 320, -3.5]
+    ]
+  );
+  resultado.terminos.forEach((termino) => {
+    assert.equal(termino.factores.length, 3);
+    assert.ok(Math.abs(termino.y * termino.base - termino.contribucion) < 1e-12);
+  });
 
   lagrange.NODOS_INICIALES.forEach((nodo) => {
     const evaluacion = lagrange.interpolarLagrange(lagrange.NODOS_INICIALES, nodo.x);
@@ -177,6 +195,9 @@ function probarLagrange() {
   assert.equal((html.match(/id="x-[0-3]"/g) || []).length, 4);
   assert.equal((html.match(/id="y-[0-3]"/g) || []).length, 4);
   assert.equal((html.match(/id="x-eval"/g) || []).length, 1);
+  assert.equal((html.match(/id="procedure-body"/g) || []).length, 1);
+  assert.equal((html.match(/id="basis-check"/g) || []).length, 1);
+  assert.equal((html.match(/id="final-sum"/g) || []).length, 1);
   assert.match(html, /<script src="\.\.\/js\/lagrange\.js" defer><\/script>[\s\S]*<script src="\.\.\/js\/app\.js" defer><\/script>/);
   assert.doesNotMatch(html, /55\.250000|55\.25 ms/);
 }

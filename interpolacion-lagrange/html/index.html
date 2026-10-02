@@ -101,10 +101,45 @@
       </div>
     </section>
 
-    <section aria-labelledby="chart-title">
+    <section aria-labelledby="procedure-title">
       <div class="section-heading">
         <div>
           <p class="section-number">03</p>
+          <h2 id="procedure-title">Procedimiento calculado</h2>
+        </div>
+        <p>Desarrollo numérico generado con los valores ingresados en el aplicativo.</p>
+      </div>
+
+      <div class="formula-strip">
+        <span>Fórmula aplicada</span>
+        <strong>P<sub>3</sub>(x<sub>eval</sub>) = Σ y<sub>k</sub>L<sub>k</sub>(x<sub>eval</sub>)</strong>
+      </div>
+
+      <div class="table-scroll procedure-scroll">
+        <table class="procedure-table">
+          <thead>
+            <tr>
+              <th scope="col">Base</th>
+              <th scope="col">Sustitución</th>
+              <th scope="col">Productos</th>
+              <th scope="col">L<sub>k</sub></th>
+              <th scope="col">y<sub>k</sub>L<sub>k</sub></th>
+            </tr>
+          </thead>
+          <tbody id="procedure-body"></tbody>
+        </table>
+      </div>
+
+      <div class="procedure-summary" aria-live="polite">
+        <p id="basis-check"></p>
+        <strong id="final-sum"></strong>
+      </div>
+    </section>
+
+    <section aria-labelledby="chart-title">
+      <div class="section-heading">
+        <div>
+          <p class="section-number">04</p>
           <h2 id="chart-title">Curva de interpolación</h2>
         </div>
         <p>Polinomio P<sub>3</sub>(x) representado en el intervalo [2, 12].</p>

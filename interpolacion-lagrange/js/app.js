@@ -30,6 +30,19 @@ function formatearEje(valor) {
   return valor.toFixed(2);
 }
 
+function formatearDetalle(valor) {
+  if (Number.isInteger(valor)) {
+    return String(valor);
+  }
+  return formatearNumero(valor).replace(/0+$/, "").replace(/\.$/, "");
+}
+
+function crearCelda(fila, texto) {
+  const celda = document.createElement("td");
+  celda.textContent = texto;
+  fila.append(celda);
+}
+
 function crearElementoSvg(nombre, atributos = {}) {
   const elemento = document.createElementNS("http://www.w3.org/2000/svg", nombre);
   Object.entries(atributos).forEach(([atributo, valor]) => {
@@ -63,6 +76,59 @@ function actualizarEstado(mensaje, tipo) {
   const estado = document.getElementById("calculation-status");
   estado.className = `status-message status-${tipo}`;
   estado.textContent = mensaje;
+}
+
+function mostrarProcedimiento(resultado, xEvaluar) {
+  const cuerpo = document.getElementById("procedure-body");
+  const subindices = ["₀", "₁", "₂", "₃"];
+  cuerpo.replaceChildren();
+
+  resultado.terminos.forEach((termino) => {
+    const fila = document.createElement("tr");
+    const numeradorSimbolico = termino.factores
+      .map(({ xComparado }) => `(${formatearDetalle(xEvaluar)} - ${formatearDetalle(xComparado)})`)
+      .join(" · ");
+    const denominadorSimbolico = termino.factores
+      .map(({ xComparado }) => `(${formatearDetalle(termino.x)} - ${formatearDetalle(xComparado)})`)
+      .join(" · ");
+    const numeradorNumerico = termino.factores
+      .map(({ numerador }) => formatearDetalle(numerador))
+      .join(" · ");
+    const denominadorNumerico = termino.factores
+      .map(({ denominador }) => formatearDetalle(denominador))
+      .join(" · ");
+
+    crearCelda(fila, `Paso ${termino.indice + 1}: L${subindices[termino.indice]}`);
+    crearCelda(
+      fila,
+      `L${subindices[termino.indice]}(${formatearDetalle(xEvaluar)}) = [${numeradorSimbolico}] / [${denominadorSimbolico}]`
+    );
+    crearCelda(
+      fila,
+      `(${numeradorNumerico}) / (${denominadorNumerico}) = ${formatearDetalle(termino.numerador)} / ${formatearDetalle(termino.denominador)}`
+    );
+    crearCelda(fila, formatearNumero(termino.base));
+    crearCelda(
+      fila,
+      `${formatearDetalle(termino.y)} · ${formatearNumero(termino.base)} = ${formatearNumero(termino.contribucion)}`
+    );
+    cuerpo.append(fila);
+  });
+
+  const sumaBases = resultado.bases.reduce((suma, base) => suma + base, 0);
+  document.getElementById("basis-check").textContent =
+    `Comprobación: Σ Lₖ(${formatearDetalle(xEvaluar)}) = ${formatearNumero(sumaBases)}.`;
+  const sumaContribuciones = resultado.terminos
+    .map(({ y, base }) => `${formatearDetalle(y)}(${formatearNumero(base)})`)
+    .join(" + ");
+  document.getElementById("final-sum").textContent =
+    `P₃(${formatearDetalle(xEvaluar)}) = ${sumaContribuciones} = ${formatearNumero(resultado.valor)} ms`;
+}
+
+function limpiarProcedimiento() {
+  document.getElementById("procedure-body").replaceChildren();
+  document.getElementById("basis-check").textContent = "";
+  document.getElementById("final-sum").textContent = "";
 }
 
 function dibujarGrafica(nodos, xEvaluar, valorEvaluado) {
@@ -262,6 +328,7 @@ function ejecutarInterpolacion(evento) {
 
     document.getElementById("evaluation-label").textContent = `P₃(${formatearNumero(xEvaluar, 4)})`;
     document.getElementById("interpolated-value").textContent = formatearNumero(resultado.valor);
+    mostrarProcedimiento(resultado, xEvaluar);
     dibujarGrafica(nodos, xEvaluar, resultado.valor);
     actualizarEstado("Interpolación calculada correctamente con los cuatro nodos.", "success");
   } catch (error) {
@@ -270,6 +337,7 @@ function ejecutarInterpolacion(evento) {
     }
     document.getElementById("evaluation-label").textContent = "P₃(x)";
     document.getElementById("interpolated-value").textContent = "-";
+    limpiarProcedimiento();
     document.getElementById("lagrange-chart").replaceChildren();
     document.getElementById("chart-note").textContent = "";
     actualizarEstado(error.message, "error");

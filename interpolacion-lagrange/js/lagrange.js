@@ -52,28 +52,49 @@
     validarNumero(xEvaluar, "El punto a evaluar");
 
     const bases = [];
+    const terminos = [];
     let valor = 0;
 
     for (let k = 0; k < nodos.length; k += 1) {
       let numerador = 1;
       let denominador = 1;
+      const factores = [];
 
       for (let i = 0; i < nodos.length; i += 1) {
         if (i !== k) {
-          numerador *= xEvaluar - nodos[i].x;
-          denominador *= nodos[k].x - nodos[i].x;
+          const factorNumerador = xEvaluar - nodos[i].x;
+          const factorDenominador = nodos[k].x - nodos[i].x;
+          numerador *= factorNumerador;
+          denominador *= factorDenominador;
+          factores.push({
+            indice: i,
+            xComparado: nodos[i].x,
+            numerador: factorNumerador,
+            denominador: factorDenominador
+          });
         }
       }
 
       const base = numerador / denominador;
-      valor += nodos[k].y * base;
+      const contribucion = nodos[k].y * base;
+      valor += contribucion;
       if (!Number.isFinite(base) || !Number.isFinite(valor)) {
         throw new ValidationError("El cálculo produjo un valor fuera del rango numérico permitido.");
       }
       bases.push(base);
+      terminos.push({
+        indice: k,
+        x: nodos[k].x,
+        y: nodos[k].y,
+        factores,
+        numerador,
+        denominador,
+        base,
+        contribucion
+      });
     }
 
-    return { valor, bases };
+    return { valor, bases, terminos };
   }
 
   function muestrearPolinomio(nodos, inicio = 2, fin = 12, cantidad = 241) {
