@@ -6,6 +6,7 @@
   <meta name="description" content="Interpolación de Lagrange de cuatro nodos para estimar la latencia de un microservicio.">
   <title>Interpolación de Lagrange - Sesión 8</title>
   <link rel="stylesheet" href="../css/styles.css">
+  <script src="../js/lagrange.js" defer></script>
   <script src="../js/app.js" defer></script>
 </head>
 <body>
@@ -46,23 +47,23 @@
             <tbody>
               <tr>
                 <th scope="row">x<sub>0</sub></th>
-                <td><label class="visually-hidden" for="x-0">Memoria del nodo 0</label><input id="x-0" type="number" step="any" value="2" required></td>
-                <td><label class="visually-hidden" for="y-0">Latencia del nodo 0</label><input id="y-0" type="number" step="any" value="150" required></td>
+                <td><label class="visually-hidden" for="x-0">Memoria del nodo 0</label><input id="x-0" type="number" step="any" required></td>
+                <td><label class="visually-hidden" for="y-0">Latencia del nodo 0</label><input id="y-0" type="number" step="any" required></td>
               </tr>
               <tr>
                 <th scope="row">x<sub>1</sub></th>
-                <td><label class="visually-hidden" for="x-1">Memoria del nodo 1</label><input id="x-1" type="number" step="any" value="4" required></td>
-                <td><label class="visually-hidden" for="y-1">Latencia del nodo 1</label><input id="y-1" type="number" step="any" value="85" required></td>
+                <td><label class="visually-hidden" for="x-1">Memoria del nodo 1</label><input id="x-1" type="number" step="any" required></td>
+                <td><label class="visually-hidden" for="y-1">Latencia del nodo 1</label><input id="y-1" type="number" step="any" required></td>
               </tr>
               <tr>
                 <th scope="row">x<sub>2</sub></th>
-                <td><label class="visually-hidden" for="x-2">Memoria del nodo 2</label><input id="x-2" type="number" step="any" value="8" required></td>
-                <td><label class="visually-hidden" for="y-2">Latencia del nodo 2</label><input id="y-2" type="number" step="any" value="50" required></td>
+                <td><label class="visually-hidden" for="x-2">Memoria del nodo 2</label><input id="x-2" type="number" step="any" required></td>
+                <td><label class="visually-hidden" for="y-2">Latencia del nodo 2</label><input id="y-2" type="number" step="any" required></td>
               </tr>
               <tr>
                 <th scope="row">x<sub>3</sub></th>
-                <td><label class="visually-hidden" for="x-3">Memoria del nodo 3</label><input id="x-3" type="number" step="any" value="12" required></td>
-                <td><label class="visually-hidden" for="y-3">Latencia del nodo 3</label><input id="y-3" type="number" step="any" value="70" required></td>
+                <td><label class="visually-hidden" for="x-3">Memoria del nodo 3</label><input id="x-3" type="number" step="any" required></td>
+                <td><label class="visually-hidden" for="y-3">Latencia del nodo 3</label><input id="y-3" type="number" step="any" required></td>
               </tr>
             </tbody>
           </table>
@@ -71,7 +72,7 @@
         <div class="calculation-bar">
           <label for="x-eval">
             <span>Punto a evaluar</span>
-            <span class="input-with-unit"><input id="x-eval" type="number" step="any" value="6" required><span>GB</span></span>
+            <span class="input-with-unit"><input id="x-eval" type="number" step="any" required><span>GB</span></span>
           </label>
           <button type="submit">Calcular interpolación</button>
         </div>
@@ -91,11 +92,11 @@
       <div class="result-band" aria-live="polite">
         <div>
           <span class="result-label">Evaluación</span>
-          <strong id="evaluation-label">P₃(6)</strong>
+          <strong id="evaluation-label">P₃(x)</strong>
         </div>
         <div>
           <span class="result-label">Latencia estimada</span>
-          <strong><span id="interpolated-value">55.250000</span> <small>ms</small></strong>
+          <strong><span id="interpolated-value">-</span> <small>ms</small></strong>
         </div>
       </div>
     </section>
