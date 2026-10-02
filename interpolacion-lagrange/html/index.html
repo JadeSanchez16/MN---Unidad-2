@@ -24,158 +24,10 @@
   </header>
 
   <main class="main-content">
-    <section class="context-section" aria-labelledby="context-title">
+    <section class="input-section" aria-labelledby="input-title">
       <div class="section-heading">
         <div>
           <p class="section-number">01</p>
-          <h2 id="context-title">Contexto y datos del problema</h2>
-        </div>
-        <p>La memoria asignada a un microservicio afecta la latencia media de sus peticiones HTTP.</p>
-      </div>
-
-      <div class="context-layout">
-        <div class="table-scroll">
-          <table class="given-table">
-            <thead>
-              <tr>
-                <th scope="col">Nodo</th>
-                <th scope="col">Memoria x (GB)</th>
-                <th scope="col">Latencia y = f(x) (ms)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><th scope="row">x<sub>0</sub></th><td>2</td><td>150</td></tr>
-              <tr><th scope="row">x<sub>1</sub></th><td>4</td><td>85</td></tr>
-              <tr><th scope="row">x<sub>2</sub></th><td>8</td><td>50</td></tr>
-              <tr><th scope="row">x<sub>3</sub></th><td>12</td><td>70</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <aside class="objective-panel" aria-label="Objetivo del problema">
-          <span>Configuración a evaluar</span>
-          <strong>x = 6 GB</strong>
-          <p>Estimar la latencia antes de desplegar esta configuración en producción.</p>
-        </aside>
-      </div>
-    </section>
-
-    <div class="part-divider">
-      <span>Parte A</span>
-      <strong>Desarrollo teórico y manual</strong>
-    </div>
-
-    <section aria-labelledby="basis-title">
-      <div class="section-heading">
-        <div>
-          <p class="section-number">02</p>
-          <h2 id="basis-title">Polinomios base de Lagrange</h2>
-        </div>
-        <p>Para cuatro puntos se construyen cuatro polinomios fundamentales de grado 3.</p>
-      </div>
-
-      <div class="formula-definition" aria-label="Fórmula general de los polinomios fundamentales">
-        <span>Fórmula general</span>
-        <strong>L<sub>k</sub>(x) = ∏<sub>i=0, i≠k</sub><sup>3</sup> (x - x<sub>i</sub>) / (x<sub>k</sub> - x<sub>i</sub>)</strong>
-      </div>
-
-      <div class="basis-list">
-        <article>
-          <h3>L<sub>0</sub>(x)</h3>
-          <div class="formula-scroll">
-            <p>L<sub>0</sub>(x) = [(x - 4)(x - 8)(x - 12)] / [(2 - 4)(2 - 8)(2 - 12)]</p>
-            <p>= -(x - 4)(x - 8)(x - 12) / 120</p>
-            <strong>= -x<sup>3</sup>/120 + x<sup>2</sup>/5 - 22x/15 + 16/5</strong>
-          </div>
-        </article>
-        <article>
-          <h3>L<sub>1</sub>(x)</h3>
-          <div class="formula-scroll">
-            <p>L<sub>1</sub>(x) = [(x - 2)(x - 8)(x - 12)] / [(4 - 2)(4 - 8)(4 - 12)]</p>
-            <p>= (x - 2)(x - 8)(x - 12) / 64</p>
-            <strong>= x<sup>3</sup>/64 - 11x<sup>2</sup>/32 + 17x/8 - 3</strong>
-          </div>
-        </article>
-        <article>
-          <h3>L<sub>2</sub>(x)</h3>
-          <div class="formula-scroll">
-            <p>L<sub>2</sub>(x) = [(x - 2)(x - 4)(x - 12)] / [(8 - 2)(8 - 4)(8 - 12)]</p>
-            <p>= -(x - 2)(x - 4)(x - 12) / 96</p>
-            <strong>= -x<sup>3</sup>/96 + 3x<sup>2</sup>/16 - 5x/6 + 1</strong>
-          </div>
-        </article>
-        <article>
-          <h3>L<sub>3</sub>(x)</h3>
-          <div class="formula-scroll">
-            <p>L<sub>3</sub>(x) = [(x - 2)(x - 4)(x - 8)] / [(12 - 2)(12 - 4)(12 - 8)]</p>
-            <p>= (x - 2)(x - 4)(x - 8) / 320</p>
-            <strong>= x<sup>3</sup>/320 - 7x<sup>2</sup>/160 + 7x/40 - 1/5</strong>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section aria-labelledby="polynomial-title">
-      <div class="section-heading">
-        <div>
-          <p class="section-number">03</p>
-          <h2 id="polynomial-title">Polinomio interpolador P<sub>3</sub>(x)</h2>
-        </div>
-        <p>Cada polinomio base se pondera con la latencia correspondiente al nodo.</p>
-      </div>
-
-      <div class="derivation-block">
-        <p>P<sub>3</sub>(x) = Σ<sub>k=0</sub><sup>3</sup> y<sub>k</sub>L<sub>k</sub>(x)</p>
-        <p>P<sub>3</sub>(x) = 150L<sub>0</sub>(x) + 85L<sub>1</sub>(x) + 50L<sub>2</sub>(x) + 70L<sub>3</sub>(x)</p>
-        <strong>P<sub>3</sub>(x) = -43x<sup>3</sup>/192 + 227x<sup>2</sup>/32 - 1651x/24 + 261</strong>
-      </div>
-
-      <dl class="coefficient-list" aria-label="Coeficientes del polinomio en forma estándar">
-        <div><dt>a<sub>3</sub></dt><dd>-43/192</dd></div>
-        <div><dt>a<sub>2</sub></dt><dd>227/32</dd></div>
-        <div><dt>a<sub>1</sub></dt><dd>-1651/24</dd></div>
-        <div><dt>a<sub>0</sub></dt><dd>261</dd></div>
-      </dl>
-    </section>
-
-    <section aria-labelledby="manual-evaluation-title">
-      <div class="section-heading">
-        <div>
-          <p class="section-number">04</p>
-          <h2 id="manual-evaluation-title">Evaluación manual en x = 6</h2>
-        </div>
-        <p>Sustitución numérica ordenada para estimar la latencia media solicitada.</p>
-      </div>
-
-      <div class="evaluation-table-wrap">
-        <table class="evaluation-table">
-          <thead>
-            <tr><th scope="col">Base</th><th scope="col">Sustitución en x = 6</th><th scope="col">Valor</th></tr>
-          </thead>
-          <tbody>
-            <tr><th scope="row">L<sub>0</sub>(6)</th><td>[(6 - 4)(6 - 8)(6 - 12)] / [(2 - 4)(2 - 8)(2 - 12)]</td><td>-0.20</td></tr>
-            <tr><th scope="row">L<sub>1</sub>(6)</th><td>[(6 - 2)(6 - 8)(6 - 12)] / [(4 - 2)(4 - 8)(4 - 12)]</td><td>0.75</td></tr>
-            <tr><th scope="row">L<sub>2</sub>(6)</th><td>[(6 - 2)(6 - 4)(6 - 12)] / [(8 - 2)(8 - 4)(8 - 12)]</td><td>0.50</td></tr>
-            <tr><th scope="row">L<sub>3</sub>(6)</th><td>[(6 - 2)(6 - 4)(6 - 8)] / [(12 - 2)(12 - 4)(12 - 8)]</td><td>-0.05</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="numeric-substitution">
-        <p>P<sub>3</sub>(6) = 150(-0.20) + 85(0.75) + 50(0.50) + 70(-0.05)</p>
-        <p>= -30 + 63.75 + 25 - 3.50</p>
-        <strong>P<sub>3</sub>(6) = 55.25 ms</strong>
-      </div>
-    </section>
-
-    <div class="part-divider">
-      <span>Parte B</span>
-      <strong>Aplicativo de software</strong>
-    </div>
-
-    <section aria-labelledby="input-title">
-      <div class="section-heading">
-        <div>
-          <p class="section-number">05</p>
           <h2 id="input-title">Entrada de datos</h2>
         </div>
         <p>Los cuatro nodos y el punto de evaluación pueden modificarse para ejecutar nuevos cálculos.</p>
@@ -230,7 +82,7 @@
     <section aria-labelledby="result-title">
       <div class="section-heading">
         <div>
-          <p class="section-number">06</p>
+          <p class="section-number">02</p>
           <h2 id="result-title">Resultado interpolado</h2>
         </div>
         <p>Latencia media estimada por el polinomio cúbico construido con los cuatro nodos.</p>
@@ -251,7 +103,7 @@
     <section aria-labelledby="chart-title">
       <div class="section-heading">
         <div>
-          <p class="section-number">07</p>
+          <p class="section-number">03</p>
           <h2 id="chart-title">Curva de interpolación</h2>
         </div>
         <p>Polinomio P<sub>3</sub>(x) representado en el intervalo [2, 12].</p>

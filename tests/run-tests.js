@@ -1,8 +1,6 @@
 "use strict";
 
 const assert = require("node:assert/strict");
-const fs = require("node:fs");
-const path = require("node:path");
 
 const lu = require("../factorizacion-lu/js/app.js");
 const jacobi = require("../jacobi/js/app.js");
@@ -116,29 +114,6 @@ function probarLagrange() {
   assert.equal(muestras.length, 241);
   assert.equal(muestras[0].x, 2);
   assert.equal(muestras.at(-1).x, 12);
-
-  const coeficientes = [261, -1651 / 24, 227 / 32, -43 / 192];
-  const evaluarFormaEstandar = (x) => coeficientes.reduceRight(
-    (acumulado, coeficiente) => acumulado * x + coeficiente,
-    0
-  );
-  lagrange.NODOS_INICIALES.forEach((nodo) => {
-    assert.ok(Math.abs(evaluarFormaEstandar(nodo.x) - nodo.y) < 1e-10);
-  });
-  assert.ok(Math.abs(evaluarFormaEstandar(6) - 55.25) < 1e-10);
-
-  const rutaHtml = path.join(__dirname, "..", "interpolacion-lagrange", "html", "index.html");
-  const html = fs.readFileSync(rutaHtml, "utf8");
-  [
-    "Polinomios base de Lagrange",
-    "L<sub>0</sub>(x)",
-    "L<sub>1</sub>(x)",
-    "L<sub>2</sub>(x)",
-    "L<sub>3</sub>(x)",
-    "-43x<sup>3</sup>/192 + 227x<sup>2</sup>/32 - 1651x/24 + 261",
-    "P<sub>3</sub>(6) = 55.25 ms",
-    "Aplicativo de software"
-  ].forEach((contenidoRequerido) => assert.ok(html.includes(contenidoRequerido)));
 }
 
 probarLU();
