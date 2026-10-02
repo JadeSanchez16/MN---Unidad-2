@@ -4,6 +4,7 @@ const assert = require("node:assert/strict");
 
 const lu = require("../factorizacion-lu/js/app.js");
 const jacobi = require("../jacobi/js/app.js");
+const lagrange = require("../interpolacion-lagrange/js/app.js");
 
 function probarLU() {
   const { L, U } = lu.factorizarDoolittle(lu.A);
@@ -76,7 +77,48 @@ function probarJacobi() {
   assert.ok(jacobi.normaInfinito(residuo) < 1e-3);
 }
 
+function probarLagrange() {
+  const resultado = lagrange.interpolarLagrange(lagrange.NODOS_INICIALES, 6);
+  assert.ok(Math.abs(resultado.valor - 55.25) < 1e-12);
+
+  const basesEsperadas = [-0.2, 0.75, 0.5, -0.05];
+  resultado.bases.forEach((base, indice) => {
+    assert.ok(Math.abs(base - basesEsperadas[indice]) < 1e-12);
+  });
+
+  lagrange.NODOS_INICIALES.forEach((nodo) => {
+    const evaluacion = lagrange.interpolarLagrange(lagrange.NODOS_INICIALES, nodo.x);
+    assert.ok(Math.abs(evaluacion.valor - nodo.y) < 1e-12);
+  });
+
+  const nodosCuadraticos = [
+    { x: 0, y: 1 },
+    { x: 1, y: 2 },
+    { x: 2, y: 5 },
+    { x: 3, y: 10 }
+  ];
+  const dinamico = lagrange.interpolarLagrange(nodosCuadraticos, 1.5);
+  assert.ok(Math.abs(dinamico.valor - 3.25) < 1e-12);
+
+  assert.throws(
+    () => lagrange.interpolarLagrange([
+      { x: 2, y: 1 },
+      { x: 2, y: 2 },
+      { x: 4, y: 3 },
+      { x: 6, y: 4 }
+    ], 3),
+    /valores de x deben ser distintos/
+  );
+
+  const muestras = lagrange.muestrearPolinomio(lagrange.NODOS_INICIALES);
+  assert.equal(muestras.length, 241);
+  assert.equal(muestras[0].x, 2);
+  assert.equal(muestras.at(-1).x, 12);
+}
+
 probarLU();
 probarJacobi();
+probarLagrange();
 console.log("PASS - regresión de factorización LU");
 console.log("PASS - convergencia y resultados del método de Jacobi");
+console.log("PASS - interpolación de Lagrange y datos dinámicos");

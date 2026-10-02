@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interpolación de Lagrange de cuatro nodos para estimar la latencia de un microservicio.">
+  <title>Interpolación de Lagrange - Sesión 8</title>
+  <link rel="stylesheet" href="../css/styles.css">
+  <script src="../js/app.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-content">
+      <nav class="module-nav" aria-label="Navegación entre sesiones">
+        <a href="../../index.html">Inicio</a>
+        <a href="../../factorizacion-lu/html/index.html">Sesión 6: LU</a>
+        <a href="../../jacobi/html/index.html">Sesión 7: Jacobi</a>
+        <span aria-current="page">Sesión 8: Lagrange</span>
+      </nav>
+      <p class="course-label">Métodos Numéricos - Sesión 8</p>
+      <h1>Interpolación polinómica de Lagrange</h1>
+      <p class="subtitle">Estimación de latencia en un clúster de microservicios</p>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <section class="input-section" aria-labelledby="input-title">
+      <div class="section-heading">
+        <div>
+          <p class="section-number">01</p>
+          <h2 id="input-title">Datos experimentales</h2>
+        </div>
+        <p>Memoria asignada al contenedor y latencia media registrada durante las pruebas de carga.</p>
+      </div>
+
+      <form id="lagrange-form" novalidate>
+        <div class="table-scroll">
+          <table class="input-table">
+            <thead>
+              <tr>
+                <th scope="col">Nodo</th>
+                <th scope="col">Memoria x (GB)</th>
+                <th scope="col">Latencia y (ms)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">x<sub>0</sub></th>
+                <td><label class="visually-hidden" for="x-0">Memoria del nodo 0</label><input id="x-0" type="number" step="any" value="2" required></td>
+                <td><label class="visually-hidden" for="y-0">Latencia del nodo 0</label><input id="y-0" type="number" step="any" value="150" required></td>
+              </tr>
+              <tr>
+                <th scope="row">x<sub>1</sub></th>
+                <td><label class="visually-hidden" for="x-1">Memoria del nodo 1</label><input id="x-1" type="number" step="any" value="4" required></td>
+                <td><label class="visually-hidden" for="y-1">Latencia del nodo 1</label><input id="y-1" type="number" step="any" value="85" required></td>
+              </tr>
+              <tr>
+                <th scope="row">x<sub>2</sub></th>
+                <td><label class="visually-hidden" for="x-2">Memoria del nodo 2</label><input id="x-2" type="number" step="any" value="8" required></td>
+                <td><label class="visually-hidden" for="y-2">Latencia del nodo 2</label><input id="y-2" type="number" step="any" value="50" required></td>
+              </tr>
+              <tr>
+                <th scope="row">x<sub>3</sub></th>
+                <td><label class="visually-hidden" for="x-3">Memoria del nodo 3</label><input id="x-3" type="number" step="any" value="12" required></td>
+                <td><label class="visually-hidden" for="y-3">Latencia del nodo 3</label><input id="y-3" type="number" step="any" value="70" required></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="calculation-bar">
+          <label for="x-eval">
+            <span>Punto a evaluar</span>
+            <span class="input-with-unit"><input id="x-eval" type="number" step="any" value="6" required><span>GB</span></span>
+          </label>
+          <button type="submit">Calcular interpolación</button>
+        </div>
+      </form>
+      <div id="calculation-status" class="status-message status-info" role="status" aria-live="polite">Datos iniciales listos para calcular.</div>
+    </section>
+
+    <section aria-labelledby="result-title">
+      <div class="section-heading">
+        <div>
+          <p class="section-number">02</p>
+          <h2 id="result-title">Resultado interpolado</h2>
+        </div>
+        <p>Latencia media estimada por el polinomio cúbico construido con los cuatro nodos.</p>
+      </div>
+
+      <div class="result-band" aria-live="polite">
+        <div>
+          <span class="result-label">Evaluación</span>
+          <strong id="evaluation-label">P₃(6)</strong>
+        </div>
+        <div>
+          <span class="result-label">Latencia estimada</span>
+          <strong><span id="interpolated-value">55.250000</span> <small>ms</small></strong>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="chart-title">
+      <div class="section-heading">
+        <div>
+          <p class="section-number">03</p>
+          <h2 id="chart-title">Curva de interpolación</h2>
+        </div>
+        <p>Polinomio P<sub>3</sub>(x) representado en el intervalo [2, 12].</p>
+      </div>
+
+      <div class="chart-legend" aria-hidden="true">
+        <span><i class="legend-line"></i>Polinomio P<sub>3</sub>(x)</span>
+        <span><i class="legend-node"></i>Nodos experimentales</span>
+        <span><i class="legend-evaluation"></i>Punto interpolado</span>
+      </div>
+      <div class="chart-frame">
+        <svg id="lagrange-chart" viewBox="0 0 900 500" role="img" aria-labelledby="chart-title chart-description">
+          <desc id="chart-description">Curva del polinomio interpolador, cuatro nodos experimentales y punto evaluado.</desc>
+        </svg>
+      </div>
+      <p id="chart-note" class="chart-note"></p>
+    </section>
+  </main>
+
+  <footer>
+    <p>Métodos Numéricos · Jade Sanchez</p>
+  </footer>
+</body>
+</html>
