@@ -218,9 +218,12 @@ function probarLagrange() {
   assert.match(codigoAplicacion, /formulario\.addEventListener\("submit", ejecutarInterpolacion\)/);
   assert.match(codigoAplicacion, /mostrarProcedimiento\(resultado, xEvaluar\)[\s\S]*mostrarSalidas\(\)/);
 
-  ["factorizacion-lu", "jacobi"].forEach((modulo) => {
+  ["factorizacion-lu", "jacobi", "interpolacion-lagrange"].forEach((modulo) => {
     const htmlModulo = fs.readFileSync(path.join(raizProyecto, modulo, "html", "index.html"), "utf8");
     assert.match(htmlModulo, /class="return-home-button" href="\.\.\/\.\.\/index\.html">Retornar al inicio<\/a>/);
+    assert.match(htmlModulo, /(?:href="\.\.\/\.\.\/factorizacion-lu\/html\/index\.html"|aria-current="page">Sesión 6: LU<\/span>)/);
+    assert.match(htmlModulo, /(?:href="\.\.\/\.\.\/jacobi\/html\/index\.html"|aria-current="page">Sesión 7: Jacobi<\/span>)/);
+    assert.match(htmlModulo, /(?:href="\.\.\/\.\.\/interpolacion-lagrange\/html\/index\.html"|aria-current="page">Sesión 8: Lagrange<\/span>)/);
   });
 }
 
