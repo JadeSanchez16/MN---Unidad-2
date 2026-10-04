@@ -221,10 +221,13 @@ function probarLagrange() {
   ["factorizacion-lu", "jacobi", "interpolacion-lagrange"].forEach((modulo) => {
     const htmlModulo = fs.readFileSync(path.join(raizProyecto, modulo, "html", "index.html"), "utf8");
     assert.match(htmlModulo, /class="return-home-button" href="\.\.\/\.\.\/index\.html">Retornar al inicio<\/a>/);
-    assert.match(htmlModulo, /(?:href="\.\.\/\.\.\/factorizacion-lu\/html\/index\.html"|aria-current="page">Sesión 6: LU<\/span>)/);
-    assert.match(htmlModulo, /(?:href="\.\.\/\.\.\/jacobi\/html\/index\.html"|aria-current="page">Sesión 7: Jacobi<\/span>)/);
-    assert.match(htmlModulo, /(?:href="\.\.\/\.\.\/interpolacion-lagrange\/html\/index\.html"|aria-current="page">Sesión 8: Lagrange<\/span>)/);
+    assert.match(htmlModulo, /(?:href="\.\.\/\.\.\/factorizacion-lu\/html\/index\.html\?v=nav2"|aria-current="page">Sesión 6: LU<\/span>)/);
+    assert.match(htmlModulo, /(?:href="\.\.\/\.\.\/jacobi\/html\/index\.html\?v=nav2"|aria-current="page">Sesión 7: Jacobi<\/span>)/);
+    assert.match(htmlModulo, /(?:href="\.\.\/\.\.\/interpolacion-lagrange\/html\/index\.html\?v=nav2"|aria-current="page">Sesión 8: Lagrange<\/span>)/);
   });
+
+  const htmlInicio = fs.readFileSync(path.join(raizProyecto, "index.html"), "utf8");
+  assert.equal((htmlInicio.match(/index\.html\?v=nav2/g) || []).length, 3);
 }
 
 probarLU();
