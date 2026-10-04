@@ -206,6 +206,15 @@ function limpiarSalidas() {
   limpiarProcedimiento();
   document.getElementById("lagrange-chart").replaceChildren();
   document.getElementById("chart-note").textContent = "";
+  document.querySelectorAll(".calculation-output").forEach((seccion) => {
+    seccion.hidden = true;
+  });
+}
+
+function mostrarSalidas() {
+  document.querySelectorAll(".calculation-output").forEach((seccion) => {
+    seccion.hidden = false;
+  });
 }
 
 function dibujarGrafica(nodos, xEvaluar, valorEvaluado) {
@@ -408,6 +417,7 @@ function ejecutarInterpolacion(evento) {
     document.getElementById("interpolated-value").textContent = formatearNumero(resultado.valor);
     mostrarProcedimiento(resultado, xEvaluar);
     dibujarGrafica(nodos, xEvaluar, resultado.valor);
+    mostrarSalidas();
     actualizarEstado(`Interpolación calculada correctamente con ${nodos.length} nodos.`, "success");
   } catch (error) {
     if (!(error instanceof ValidationError)) {
@@ -433,11 +443,26 @@ function agregarNodo() {
   entrada.focus();
 }
 
+function marcarDatosPendientes(evento) {
+  if (!evento.target.matches("input")) {
+    return;
+  }
+
+  const hayResultadosVisibles = Array.from(document.querySelectorAll(".calculation-output"))
+    .some((seccion) => !seccion.hidden);
+  if (hayResultadosVisibles) {
+    limpiarSalidas();
+    actualizarEstado("Datos modificados. Presiona Calcular interpolación para obtener el nuevo resultado.", "info");
+  }
+}
+
 function iniciarAplicacion() {
   cargarDatosIniciales();
-  document.getElementById("lagrange-form").addEventListener("submit", ejecutarInterpolacion);
+  const formulario = document.getElementById("lagrange-form");
+  formulario.addEventListener("submit", ejecutarInterpolacion);
+  formulario.addEventListener("input", marcarDatosPendientes);
   document.getElementById("add-node-button").addEventListener("click", agregarNodo);
-  ejecutarInterpolacion();
+  limpiarSalidas();
 }
 
 if (typeof document !== "undefined") {

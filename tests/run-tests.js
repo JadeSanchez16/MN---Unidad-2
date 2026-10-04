@@ -193,8 +193,10 @@ function probarLagrange() {
 
   const raizProyecto = path.join(__dirname, "..");
   const rutaHtml = path.join(raizProyecto, "interpolacion-lagrange", "html", "index.html");
+  const rutaAplicacion = path.join(raizProyecto, "interpolacion-lagrange", "js", "app.js");
   const rutaMotor = path.join(raizProyecto, "interpolacion-lagrange", "js", "lagrange.js");
   const html = fs.readFileSync(rutaHtml, "utf8");
+  const codigoAplicacion = fs.readFileSync(rutaAplicacion, "utf8");
   const codigoMotor = fs.readFileSync(rutaMotor, "utf8");
   const cuerpoInterpolador = codigoMotor.slice(
     codigoMotor.indexOf("function interpolarLagrange"),
@@ -208,8 +210,18 @@ function probarLagrange() {
   assert.equal((html.match(/id="procedure-body"/g) || []).length, 1);
   assert.equal((html.match(/id="basis-check"/g) || []).length, 1);
   assert.equal((html.match(/id="final-sum"/g) || []).length, 1);
+  assert.equal((html.match(/class="calculation-output"[^>]*hidden/g) || []).length, 3);
+  assert.match(html, /class="return-home-button" href="\.\.\/\.\.\/index\.html">Retornar al inicio<\/a>/);
   assert.match(html, /<script src="\.\.\/js\/lagrange\.js" defer><\/script>[\s\S]*<script src="\.\.\/js\/app\.js" defer><\/script>/);
   assert.doesNotMatch(html, /55\.250000|55\.25 ms/);
+  assert.doesNotMatch(codigoAplicacion, /iniciarAplicacion\(\)[\s\S]*ejecutarInterpolacion\(\);/);
+  assert.match(codigoAplicacion, /formulario\.addEventListener\("submit", ejecutarInterpolacion\)/);
+  assert.match(codigoAplicacion, /mostrarProcedimiento\(resultado, xEvaluar\)[\s\S]*mostrarSalidas\(\)/);
+
+  ["factorizacion-lu", "jacobi"].forEach((modulo) => {
+    const htmlModulo = fs.readFileSync(path.join(raizProyecto, modulo, "html", "index.html"), "utf8");
+    assert.match(htmlModulo, /class="return-home-button" href="\.\.\/\.\.\/index\.html">Retornar al inicio<\/a>/);
+  });
 }
 
 probarLU();

@@ -64,7 +64,7 @@
       <div id="calculation-status" class="status-message status-info" role="status" aria-live="polite">Datos iniciales listos para calcular.</div>
     </section>
 
-    <section aria-labelledby="result-title">
+    <section id="result-section" class="calculation-output" aria-labelledby="result-title" hidden>
       <div class="section-heading">
         <div>
           <p class="section-number">02</p>
@@ -85,7 +85,7 @@
       </div>
     </section>
 
-    <section aria-labelledby="procedure-title">
+    <section id="procedure-section" class="calculation-output" aria-labelledby="procedure-title" hidden>
       <div class="section-heading">
         <div>
           <p class="section-number">03</p>
@@ -120,7 +120,7 @@
       </div>
     </section>
 
-    <section aria-labelledby="chart-title">
+    <section id="chart-section" class="calculation-output" aria-labelledby="chart-title" hidden>
       <div class="section-heading">
         <div>
           <p class="section-number">04</p>
@@ -141,6 +141,10 @@
       </div>
       <p id="chart-note" class="chart-note"></p>
     </section>
+
+    <nav class="return-home-bar" aria-label="Retorno a la pantalla de inicio">
+      <a class="return-home-button" href="../../index.html">Retornar al inicio</a>
+    </nav>
   </main>
 
   <footer>
