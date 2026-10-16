@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Solucionador general de interpolación de Newton mediante diferencias divididas.">
+  <title>Interpolación de Newton - Sesión 9</title>
+  <link rel="stylesheet" href="../css/styles.css">
+  <script src="../js/newton.js" defer></script>
+  <script src="../js/app.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-content">
+      <nav class="module-nav" aria-label="Navegación entre sesiones">
+        <a href="../../index.html">Inicio</a>
+        <a href="../../factorizacion-lu/html/index.html?v=nav3">Sesión 6: LU</a>
+        <a href="../../jacobi/html/index.html?v=nav3">Sesión 7: Jacobi</a>
+        <a href="../../interpolacion-lagrange/html/index.html?v=nav3">Sesión 8: Lagrange</a>
+        <span aria-current="page">Sesión 9: Newton</span>
+      </nav>
+      <p class="course-label">Métodos Numéricos - Sesión 9</p>
+      <h1>Interpolación polinomial de Newton</h1>
+      <p class="subtitle">Estimación de latencia en una API de microservicios</p>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <section class="input-section" aria-labelledby="data-title">
+      <div class="section-heading">
+        <div>
+          <p class="section-number">01</p>
+          <h2 id="data-title">Datos del problema</h2>
+        </div>
+        <p>La carga se expresa en centenas de solicitudes por segundo y la latencia en milisegundos.</p>
+      </div>
+
+      <div class="context-band">
+        <strong>Contexto</strong>
+        <p>Una API REST crítica necesita estimar su latencia cuando cambia la carga concurrente. Los campos pueden editarse para resolver otros ejercicios.</p>
+      </div>
+
+      <form id="newton-form" novalidate>
+        <div class="table-scroll">
+          <table class="input-table">
+            <thead>
+              <tr>
+                <th scope="col">Nodo</th>
+                <th scope="col">Carga X (100 req/s)</th>
+                <th scope="col">Latencia Y (ms)</th>
+                <th scope="col">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="nodes-body"></tbody>
+          </table>
+        </div>
+
+        <div class="input-actions">
+          <div class="button-group">
+            <button id="add-node-button" class="secondary-button" type="button">Agregar punto</button>
+            <button id="restore-button" class="secondary-button" type="button">Restaurar datos</button>
+          </div>
+          <span id="node-count" aria-live="polite"></span>
+        </div>
+
+        <div class="calculation-bar">
+          <label for="x-eval">
+            <span>Punto a evaluar</span>
+            <span class="input-with-unit"><input id="x-eval" type="number" step="any" required><span>× 100 req/s</span></span>
+          </label>
+          <label for="degree-select">
+            <span>Grado del polinomio</span>
+            <select id="degree-select"></select>
+          </label>
+          <label class="toggle-control" for="overlay-degrees">
+            <input id="overlay-degrees" type="checkbox">
+            <span>Superponer grados</span>
+          </label>
+          <button type="submit">Calcular interpolación</button>
+        </div>
+      </form>
+      <div id="calculation-status" class="status-message status-info" role="status" aria-live="polite">Datos iniciales listos. Presiona Calcular interpolación.</div>
+    </section>
+
+    <div id="calculation-output" hidden>
+      <section aria-labelledby="result-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-number">02</p>
+            <h2 id="result-title">Resultado interpolado</h2>
+          </div>
+          <p id="selection-criterion">Los nodos se ordenan por X y se toman progresivamente desde el menor.</p>
+        </div>
+        <div class="result-band" aria-live="polite">
+          <div>
+            <span class="result-label">Evaluación</span>
+            <strong id="evaluation-label">P(x)</strong>
+          </div>
+          <div>
+            <span class="result-label">Latencia estimada</span>
+            <strong><span id="interpolated-value"></span> <small>ms</small></strong>
+          </div>
+          <div>
+            <span class="result-label">Tipo de cálculo</span>
+            <strong id="calculation-kind" class="result-kind"></strong>
+          </div>
+        </div>
+        <div id="warning-list" class="warning-list" hidden></div>
+      </section>
+
+      <section aria-labelledby="differences-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-number">03</p>
+            <h2 id="differences-title">Tabla de diferencias divididas</h2>
+          </div>
+          <p>La primera fila de cada orden contiene los coeficientes del polinomio de Newton.</p>
+        </div>
+        <div id="coefficient-strip" class="coefficient-strip"></div>
+        <div class="table-scroll">
+          <table id="differences-table" class="data-table"></table>
+        </div>
+        <div class="procedure-list-wrap">
+          <h3>Cálculo de cada diferencia</h3>
+          <ol id="differences-steps" class="procedure-list"></ol>
+        </div>
+      </section>
+
+      <section aria-labelledby="polynomial-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-number">04</p>
+            <h2 id="polynomial-title">Construcción del polinomio</h2>
+          </div>
+          <p>Se construye primero en la base de Newton y luego se expande a potencias de x.</p>
+        </div>
+        <div class="formula-stack">
+          <div><span>Fórmula general</span><strong id="general-formula"></strong></div>
+          <div><span>Sustitución</span><strong id="substituted-formula"></strong></div>
+          <div><span>Forma de Newton</span><strong id="newton-formula"></strong></div>
+        </div>
+        <div class="table-scroll development-scroll">
+          <table class="data-table">
+            <thead>
+              <tr><th scope="col">Término</th><th scope="col">Producto</th><th scope="col">Desarrollo</th></tr>
+            </thead>
+            <tbody id="development-body"></tbody>
+          </table>
+        </div>
+        <div class="standard-result">
+          <div>
+            <span>Agrupación por potencias</span>
+            <p id="power-grouping"></p>
+          </div>
+          <div>
+            <span>Forma estándar</span>
+            <strong id="standard-polynomial"></strong>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="evaluation-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-number">05</p>
+            <h2 id="evaluation-title">Evaluación eficiente</h2>
+          </div>
+          <p>La regla anidada evita desarrollar nuevamente el polinomio para calcular su valor.</p>
+        </div>
+        <div class="formula-strip"><span>Regla anidada</span><strong id="nested-formula"></strong></div>
+        <ol id="evaluation-steps" class="procedure-list evaluation-steps"></ol>
+        <div class="final-result" id="evaluation-result"></div>
+      </section>
+
+      <section aria-labelledby="validation-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-number">06</p>
+            <h2 id="validation-title">Validación matemática</h2>
+          </div>
+          <p>Cada polinomio se verifica únicamente contra los nodos utilizados para construirlo.</p>
+        </div>
+        <div class="procedure-list-wrap">
+          <h3>Sustitución de los nodos utilizados</h3>
+          <ol id="validation-steps" class="procedure-list validation-steps"></ol>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table validation-table">
+            <thead>
+              <tr><th scope="col">X</th><th scope="col">Y original</th><th scope="col">P(X)</th><th scope="col">Diferencia</th><th scope="col">Estado</th></tr>
+            </thead>
+            <tbody id="validation-body"></tbody>
+          </table>
+        </div>
+        <div id="validation-status" class="status-message"></div>
+      </section>
+
+      <section aria-labelledby="chart-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-number">07</p>
+            <h2 id="chart-title">Gráfica interactiva de Newton</h2>
+          </div>
+          <p id="chart-description-text"></p>
+        </div>
+        <div id="chart-legend" class="chart-legend"></div>
+        <div class="chart-frame">
+          <svg id="newton-chart" viewBox="0 0 960 540" role="img" aria-labelledby="chart-title chart-description">
+            <desc id="chart-description">Curva del polinomio de Newton, nodos experimentales y punto evaluado.</desc>
+          </svg>
+        </div>
+        <p id="chart-note" class="chart-note"></p>
+      </section>
+
+      <section aria-labelledby="comparison-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-number">08</p>
+            <h2 id="comparison-title">Comparación de grados</h2>
+          </div>
+          <p>Para el grado g se emplean los primeros g + 1 nodos después de ordenarlos por X ascendente.</p>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table comparison-table">
+            <thead>
+              <tr><th scope="col">Grado</th><th scope="col">Nodos utilizados</th><th scope="col">Polinomio</th><th scope="col">Evaluación</th></tr>
+            </thead>
+            <tbody id="comparison-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <nav class="return-home-bar" aria-label="Retorno a la pantalla de inicio">
+      <a class="return-home-button" href="../../index.html">Retornar al inicio</a>
+    </nav>
+  </main>
+
+  <footer><p>Métodos Numéricos · Jade Sanchez</p></footer>
+</body>
+</html>

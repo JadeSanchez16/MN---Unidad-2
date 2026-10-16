@@ -8,6 +8,8 @@ const lu = require("../factorizacion-lu/js/app.js");
 const jacobi = require("../jacobi/js/app.js");
 const lagrange = require("../interpolacion-lagrange/js/lagrange.js");
 const lagrangeDesdeInterfaz = require("../interpolacion-lagrange/js/app.js");
+const newton = require("../interpolacion-newton/js/newton.js");
+const newtonDesdeInterfaz = require("../interpolacion-newton/js/app.js");
 
 function probarLU() {
   const { L, U } = lu.factorizarDoolittle(lu.A);
@@ -218,21 +220,121 @@ function probarLagrange() {
   assert.match(codigoAplicacion, /formulario\.addEventListener\("submit", ejecutarInterpolacion\)/);
   assert.match(codigoAplicacion, /mostrarProcedimiento\(resultado, xEvaluar\)[\s\S]*mostrarSalidas\(\)/);
 
-  ["factorizacion-lu", "jacobi", "interpolacion-lagrange"].forEach((modulo) => {
+  ["factorizacion-lu", "jacobi", "interpolacion-lagrange", "interpolacion-newton"].forEach((modulo) => {
     const htmlModulo = fs.readFileSync(path.join(raizProyecto, modulo, "html", "index.html"), "utf8");
     assert.match(htmlModulo, /class="return-home-button" href="\.\.\/\.\.\/index\.html">Retornar al inicio<\/a>/);
-    assert.match(htmlModulo, /(?:href="\.\.\/\.\.\/factorizacion-lu\/html\/index\.html\?v=nav2"|aria-current="page">Sesión 6: LU<\/span>)/);
-    assert.match(htmlModulo, /(?:href="\.\.\/\.\.\/jacobi\/html\/index\.html\?v=nav2"|aria-current="page">Sesión 7: Jacobi<\/span>)/);
-    assert.match(htmlModulo, /(?:href="\.\.\/\.\.\/interpolacion-lagrange\/html\/index\.html\?v=nav2"|aria-current="page">Sesión 8: Lagrange<\/span>)/);
+    assert.match(htmlModulo, /(?:href="\.\.\/\.\.\/factorizacion-lu\/html\/index\.html\?v=nav3"|aria-current="page">Sesión 6: LU<\/span>)/);
+    assert.match(htmlModulo, /(?:href="\.\.\/\.\.\/jacobi\/html\/index\.html\?v=nav3"|aria-current="page">Sesión 7: Jacobi<\/span>)/);
+    assert.match(htmlModulo, /(?:href="\.\.\/\.\.\/interpolacion-lagrange\/html\/index\.html\?v=nav3"|aria-current="page">Sesión 8: Lagrange<\/span>)/);
+    assert.match(htmlModulo, /(?:href="\.\.\/\.\.\/interpolacion-newton\/html\/index\.html\?v=nav3"|aria-current="page">Sesión 9: Newton<\/span>)/);
   });
 
   const htmlInicio = fs.readFileSync(path.join(raizProyecto, "index.html"), "utf8");
-  assert.equal((htmlInicio.match(/index\.html\?v=nav2/g) || []).length, 3);
+  assert.equal((htmlInicio.match(/index\.html\?v=nav3/g) || []).length, 4);
+}
+
+function aproximadamenteIgual(actual, esperado, tolerancia = 1e-10) {
+  assert.ok(
+    Math.abs(actual - esperado) <= tolerancia * Math.max(1, Math.abs(esperado)),
+    `${actual} no coincide con ${esperado}`
+  );
+}
+
+function probarNewton() {
+  assert.equal(newtonDesdeInterfaz, newton);
+  assert.equal(newton.PUNTO_EVALUACION_INICIAL, 5);
+  assert.deepEqual(newton.NODOS_INICIALES, [
+    { x: 1, y: 45 },
+    { x: 2, y: 65 },
+    { x: 4, y: 110 },
+    { x: 7, y: 220 }
+  ]);
+
+  const X = [1, 2, 4, 7];
+  const Y = [45, 65, 110, 220];
+  const diferencias = newton.diferencias_divididas(X, Y);
+  const tablaEsperada = [
+    [45, 20, 5 / 6, 1 / 3],
+    [65, 45 / 2, 17 / 6, null],
+    [110, 110 / 3, null, null],
+    [220, null, null, null]
+  ];
+  tablaEsperada.forEach((fila, i) => fila.forEach((esperado, j) => {
+    if (esperado === null) {
+      assert.equal(diferencias.tabla[i][j], null);
+    } else {
+      aproximadamenteIgual(diferencias.tabla[i][j], esperado);
+    }
+  }));
+  assert.equal(diferencias.pasos.length, 6);
+
+  const resultado = newton.resolverNewton(X, Y, 5, 3);
+  [45, 20, 5 / 6, 1 / 3].forEach((esperado, indice) => {
+    aproximadamenteIgual(resultado.coeficientes[indice], esperado);
+  });
+  [24, 133 / 6, -3 / 2, 1 / 3].forEach((esperado, indice) => {
+    aproximadamenteIgual(resultado.coeficientesEstandar[indice], esperado);
+  });
+  aproximadamenteIgual(resultado.valor, 139);
+  assert.equal(resultado.clasificacion, "interpolación");
+  assert.equal(resultado.validaciones.every(({ valido }) => valido), true);
+  assert.deepEqual(resultado.validaciones.map(({ calculado }) => calculado), Y);
+
+  const valoresPorGrado = [45, 125, 135, 139];
+  valoresPorGrado.forEach((esperado, grado) => {
+    const parcial = newton.resolverNewton(X, Y, 5, grado);
+    aproximadamenteIgual(parcial.valor, esperado);
+    assert.equal(parcial.X.length, grado + 1);
+    assert.equal(parcial.validaciones.length, grado + 1);
+    assert.equal(parcial.validaciones.every(({ valido }) => valido), true);
+  });
+
+  const desordenado = newton.resolverNewton([7, 1, 4, 2], [220, 45, 110, 65], 5, 3);
+  aproximadamenteIgual(desordenado.valor, 139);
+  assert.deepEqual(desordenado.X, X);
+
+  const cubico = (x) => 2 * x ** 3 - 3 * x ** 2 + 4 * x - 5;
+  const XGeneral = [-2, 0.5, 3, 5];
+  const YGeneral = XGeneral.map(cubico);
+  const general = newton.resolverNewton(XGeneral, YGeneral, 1.25, 3);
+  aproximadamenteIgual(general.valor, cubico(1.25));
+  [ -5, 4, -3, 2 ].forEach((esperado, indice) => {
+    aproximadamenteIgual(general.coeficientesEstandar[indice], esperado);
+  });
+
+  const extrapolacion = newton.resolverNewton(X, Y, 9, 3);
+  assert.equal(extrapolacion.clasificacion, "extrapolación");
+
+  const muestras = newton.muestrearNewton(resultado.coeficientes, resultado.X, 0, 8, 101);
+  assert.equal(muestras.length, 101);
+  assert.equal(muestras[0].x, 0);
+  assert.equal(muestras.at(-1).x, 8);
+  assert.equal(muestras.every(({ x, y }) => Number.isFinite(x) && Number.isFinite(y)), true);
+
+  assert.throws(() => newton.diferencias_divididas([1, 2], [1]), /misma longitud/);
+  assert.throws(() => newton.diferencias_divididas([1, 1], [2, 3]), /distintos/);
+  assert.throws(() => newton.diferencias_divididas([1, 2], [2, Number.NaN]), /número finito/);
+  assert.throws(() => newton.resolverNewton(X, Y, 5, 4), /grado debe ser/);
+  assert.throws(() => newton.resolverNewton(X, Y, Number.POSITIVE_INFINITY, 3), /punto a evaluar/);
+
+  const raizProyecto = path.join(__dirname, "..");
+  const html = fs.readFileSync(path.join(raizProyecto, "interpolacion-newton", "html", "index.html"), "utf8");
+  const codigoMotor = fs.readFileSync(path.join(raizProyecto, "interpolacion-newton", "js", "newton.js"), "utf8");
+  assert.match(codigoMotor, /function diferencias_divididas\(X, Y\)/);
+  assert.match(codigoMotor, /for \(let orden = 1;[\s\S]*for \(let fila = 0;/);
+  assert.match(codigoMotor, /function evaluarNewton/);
+  assert.match(codigoMotor, /function expandirPolinomioNewton/);
+  ["nodes-body", "add-node-button", "restore-button", "degree-select", "x-eval", "differences-table", "validation-steps", "newton-chart", "comparison-body"].forEach((id) => {
+    assert.equal((html.match(new RegExp(`id="${id}"`, "g")) || []).length, 1);
+  });
+  assert.doesNotMatch(html, /139\s*ms|133\/6|P₃\(5\)/);
 }
 
 probarLU();
 probarJacobi();
 probarLagrange();
+probarNewton();
 console.log("PASS - regresión de factorización LU");
 console.log("PASS - convergencia y resultados del método de Jacobi");
 console.log("PASS - interpolación de Lagrange y datos dinámicos");
+console.log("PASS - interpolación de Newton, grados y validaciones");
