@@ -3,6 +3,7 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const vm = require("node:vm");
 
 const lu = require("../factorizacion-lu/js/app.js");
 const jacobi = require("../jacobi/js/app.js");
@@ -267,6 +268,10 @@ function probarNewton() {
     }
   }));
   assert.equal(diferencias.pasos.length, 6);
+  diferencias.pasos.forEach((paso) => {
+    aproximadamenteIgual(paso.numerador, paso.superior - paso.inferior);
+    aproximadamenteIgual(paso.valor, paso.numerador / paso.denominador);
+  });
 
   const resultado = newton.resolverNewton(X, Y, 5, 3);
   [45, 20, 5 / 6, 1 / 3].forEach((esperado, indice) => {
@@ -279,6 +284,12 @@ function probarNewton() {
   assert.equal(resultado.clasificacion, "interpolación");
   assert.equal(resultado.validaciones.every(({ valido }) => valido), true);
   assert.deepEqual(resultado.validaciones.map(({ calculado }) => calculado), Y);
+  [-3, 0, 1, 2.5, 5, 7, 10].forEach((x) => {
+    const esperado = x ** 3 / 3 - 1.5 * x ** 2 + (133 / 6) * x + 24;
+    aproximadamenteIgual(newton.evaluarNewton(resultado.coeficientes, X, x).valor, esperado);
+    aproximadamenteIgual(newton.evaluarEstandar(resultado.coeficientesEstandar, x), esperado);
+  });
+  assert.deepEqual(resultado.pasosEvaluacion.map(({ indice }) => indice), [3, 2, 1, 0]);
 
   const valoresPorGrado = [45, 125, 135, 139];
   valoresPorGrado.forEach((esperado, grado) => {
@@ -311,11 +322,52 @@ function probarNewton() {
   assert.equal(muestras.at(-1).x, 8);
   assert.equal(muestras.every(({ x, y }) => Number.isFinite(x) && Number.isFinite(y)), true);
 
+  const ejemploTeorico = newton.resolverNewton([1, 2, 4, 5], [2, 5, 17, 26], 3);
+  assert.equal(ejemploTeorico.valor, 10);
+  assert.deepEqual(ejemploTeorico.coeficientes, [2, 3, 1, 0]);
+  assert.deepEqual(ejemploTeorico.coeficientesEstandar, [1, 0, 1, 0]);
+  const constante = newton.resolverNewton([0.5], [-2.75], 0.5);
+  assert.equal(constante.valor, -2.75);
+  assert.equal(constante.clasificacion, "interpolación");
+  assert.equal(newton.evaluarNewton([0], [0], 10).valor, 0);
+  const cuartico = (x) => x ** 4 - 2 * x + 7;
+  const xsCuartico = [-3, -0.25, 1, 2, 4.5];
+  const resultadoCuartico = newton.resolverNewton(xsCuartico, xsCuartico.map(cuartico), 0.75);
+  aproximadamenteIgual(resultadoCuartico.valor, cuartico(0.75));
+  assert.ok(resultadoCuartico.validaciones.every(({ valido }) => valido));
+  const diminuto = newton.resolverNewton([0, 1], [0, 1e-13], 0.5);
+  assert.equal(diminuto.valor, 5e-14);
+  const proximos = newton.resolverNewton([0, 1e-13], [0, 1e-13], 5e-14);
+  assert.equal(proximos.valor, 5e-14);
+  assert.ok(proximos.advertencias.some((mensaje) => /próximos/.test(mensaje)));
+  const desplazados = [1e8, 1e8 + 1, 1e8 + 2, 1e8 + 3];
+  const cancelacion = newton.resolverNewton(desplazados, [0, 1, 8, 27], 1e8 + 1.5);
+  assert.equal(cancelacion.valor, 3.375);
+  assert.ok(cancelacion.advertencias.some((mensaje) => /estándar pierde precisión/.test(mensaje)));
+
   assert.throws(() => newton.diferencias_divididas([1, 2], [1]), /misma longitud/);
   assert.throws(() => newton.diferencias_divididas([1, 1], [2, 3]), /distintos/);
   assert.throws(() => newton.diferencias_divididas([1, 2], [2, Number.NaN]), /número finito/);
   assert.throws(() => newton.resolverNewton(X, Y, 5, 4), /grado debe ser/);
   assert.throws(() => newton.resolverNewton(X, Y, Number.POSITIVE_INFINITY, 3), /punto a evaluar/);
+  assert.throws(() => newton.resolverNewton(null, null, 0), newton.ValidationError);
+  assert.throws(() => newton.resolverNewton([], [], 0), /al menos un nodo/);
+  assert.throws(() => newton.resolverNewton([1], ["2"], 0), /número finito/);
+  assert.throws(() => newton.diferencias_divididas(Array(2), [1, 2]), /número finito/);
+  [-1, 1.5, NaN, Infinity].forEach((grado) => {
+    assert.throws(() => newton.resolverNewton(X, Y, 5, grado), /grado debe ser/);
+  });
+  assert.throws(() => newton.diferencias_divididas([-1e308, 1e308], [0, 1]), /rango numérico/);
+  assert.throws(() => newton.diferencias_divididas([0, 1], [-1e308, 1e308]), /rango numérico/);
+  assert.throws(() => newton.diferencias_divididas([0, 1e308], [0, 1e-308]), /subdesbordamiento/);
+  assert.throws(() => newton.evaluarNewton([Infinity], [0], 0), /número finito/);
+  assert.throws(() => newton.evaluarNewton([1], [NaN], 0), /número finito/);
+  assert.throws(() => newton.evaluarNewton([], [], 0), /al menos un coeficiente/);
+  assert.throws(() => newton.evaluarNewton([1, 2], [0], 0), /misma longitud/);
+  assert.throws(() => newton.expandirPolinomioNewton([], []), /al menos un coeficiente/);
+  assert.throws(() => newton.evaluarEstandar([0, 1e308], 10), /rango numérico/);
+  assert.throws(() => newton.muestrearNewton([1], [0], 1, 0), /amplitud positiva/);
+  assert.throws(() => newton.muestrearNewton([1], [0], 0, 1, 1), /cantidad de muestras/);
 
   const raizProyecto = path.join(__dirname, "..");
   const html = fs.readFileSync(path.join(raizProyecto, "interpolacion-newton", "html", "index.html"), "utf8");
@@ -328,6 +380,23 @@ function probarNewton() {
     assert.equal((html.match(new RegExp(`id="${id}"`, "g")) || []).length, 1);
   });
   assert.doesNotMatch(html, /139\s*ms|133\/6|P₃\(5\)/);
+
+  const contexto = vm.createContext({ module: { exports: {} }, require: () => newton });
+  vm.runInContext(fs.readFileSync(path.join(raizProyecto, "interpolacion-newton/js/app.js"), "utf8"), contexto);
+  const vista = vm.runInContext("({ formatearDecimal, formatearPolinomio, formatearFormaNewton, nombreDiferencia, calcularRangoGrafico, formatearEje })", contexto);
+  assert.equal(vista.nombreDiferencia([-2.25, 0.125, 3.75], 0, 2), "f[-2.25, 0.125, 3.75]");
+  assert.equal(Number(vista.formatearDecimal(1e-13)), 1e-13);
+  assert.equal(Number(vista.formatearDecimal(-5e-14)), -5e-14);
+  assert.notEqual(vista.formatearPolinomio([0, 1e-13]), "0");
+  assert.match(vista.formatearFormaNewton(resultado), /45 \+ 20\(x - 1\) \+ 5\/6\(x - 1\)\(x - 2\)/);
+  const rangoDiminuto = vista.calcularRangoGrafico([0, 1e-13]);
+  assert.ok(rangoDiminuto[0] < 0 && rangoDiminuto[1] > 1e-13 && rangoDiminuto[1] < 1e-12);
+  assert.notEqual(vista.formatearEje(100.01, 0.1), vista.formatearEje(100.02, 0.1));
+  assert.equal(vista.formatearEje(230.4, 300), "230");
+  assert.equal(vista.formatearDecimal(10.4, 0), "10");
+  assert.match(vista.formatearEje(1.25e-13, 1e-13), /^1\.25e-13$/);
+  assert.equal(vista.formatearPolinomio([0, 1e-13]), "(1e-13)x");
+  assert.throws(() => vista.calcularRangoGrafico([-1e308, 1e308]), /rango de la gráfica/);
 }
 
 probarLU();

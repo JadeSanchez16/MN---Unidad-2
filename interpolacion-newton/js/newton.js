@@ -35,13 +35,14 @@
       throw new ValidationError("Se requiere al menos un nodo para construir el polinomio.");
     }
 
-    X.forEach((valor, indice) => validarNumero(valor, `x${indice}`));
-    Y.forEach((valor, indice) => validarNumero(valor, `y${indice}`));
+    for (let indice = 0; indice < X.length; indice += 1) {
+      validarNumero(X[indice], `x${indice}`);
+      validarNumero(Y[indice], `y${indice}`);
+    }
 
     for (let i = 0; i < X.length; i += 1) {
       for (let j = i + 1; j < X.length; j += 1) {
-        const escala = Math.max(1, Math.abs(X[i]), Math.abs(X[j]));
-        if (Math.abs(X[i] - X[j]) <= EPSILON_NUMERICO * escala) {
+        if (X[i] === X[j]) {
           throw new ValidationError("Todos los nodos X deben ser distintos.");
         }
       }
@@ -77,10 +78,16 @@
         const extremoIzquierdo = X[fila];
         const numerador = superior - inferior;
         const denominador = extremoDerecho - extremoIzquierdo;
+        if (!Number.isFinite(numerador) || !Number.isFinite(denominador)) {
+          throw new ValidationError("La resta de los datos excedió el rango numérico permitido.");
+        }
         const valor = numerador / denominador;
 
         if (!Number.isFinite(valor)) {
           throw new ValidationError("La tabla produjo un valor no finito; revisa la separación y magnitud de los nodos.");
+        }
+        if (valor === 0 && numerador !== 0) {
+          throw new ValidationError("Una diferencia dividida perdió precisión por subdesbordamiento; cambia la escala de los datos.");
         }
 
         tabla[fila][orden] = valor;
@@ -121,8 +128,13 @@
     if (!Array.isArray(coeficientes) || !Array.isArray(X) || coeficientes.length !== X.length) {
       throw new ValidationError("Los coeficientes y nodos deben tener la misma longitud.");
     }
-    coeficientes.forEach((valor, indice) => validarNumero(valor, `a${indice}`));
-    X.forEach((valor, indice) => validarNumero(valor, `x${indice}`));
+    if (coeficientes.length === 0) {
+      throw new ValidationError("Se requiere al menos un coeficiente para construir el polinomio.");
+    }
+    for (let indice = 0; indice < coeficientes.length; indice += 1) {
+      validarNumero(coeficientes[indice], `a${indice}`);
+      validarNumero(X[indice], `x${indice}`);
+    }
 
     const estandar = Array(coeficientes.length).fill(0);
     const desarrollos = [];
@@ -160,6 +172,10 @@
       throw new ValidationError("Se requiere al menos un coeficiente para evaluar el polinomio.");
     }
     validarNumero(xEvaluar, "El punto a evaluar");
+    for (let indice = 0; indice < coeficientes.length; indice += 1) {
+      validarNumero(coeficientes[indice], `a${indice}`);
+      validarNumero(X[indice], `x${indice}`);
+    }
 
     let valor = coeficientes.at(-1);
     const pasos = [{ indice: coeficientes.length - 1, inicial: true, resultado: valor }];
@@ -185,9 +201,16 @@
 
   function evaluarEstandar(coeficientes, x) {
     validarNumero(x, "El punto a evaluar");
+    if (!Array.isArray(coeficientes) || coeficientes.length === 0) {
+      throw new ValidationError("Se requiere al menos un coeficiente para evaluar el polinomio.");
+    }
     let valor = 0;
     for (let k = coeficientes.length - 1; k >= 0; k -= 1) {
+      validarNumero(coeficientes[k], `a${k}`);
       valor = valor * x + coeficientes[k];
+      if (!Number.isFinite(valor)) {
+        throw new ValidationError("La evaluación estándar excedió el rango numérico permitido.");
+      }
     }
     return valor;
   }
@@ -210,6 +233,9 @@
     if (X.length > 1 && separacionMaxima / separacionMinima > 1e8) {
       advertencias.push("Los nodos tienen separaciones muy desiguales; el resultado puede ser sensible al redondeo.");
     }
+    if (X.length > 1 && separacionMinima <= EPSILON_NUMERICO * maxX) {
+      advertencias.push("Los nodos X son distintos pero muy próximos; la interpolación puede amplificar errores de redondeo.");
+    }
     if (maxX > 1e8 || maxY > 1e12) {
       advertencias.push("La magnitud de los datos es elevada; interpreta los últimos dígitos con cautela.");
     }
@@ -220,8 +246,11 @@
     return advertencias;
   }
 
-  function resolverNewton(XEntrada, YEntrada, xEvaluar, grado = XEntrada.length - 1) {
+  function resolverNewton(XEntrada, YEntrada, xEvaluar, grado) {
     validarDatos(XEntrada, YEntrada);
+    if (grado === undefined) {
+      grado = XEntrada.length - 1;
+    }
     validarNumero(xEvaluar, "El punto a evaluar");
     if (!Number.isInteger(grado) || grado < 0 || grado >= XEntrada.length) {
       throw new ValidationError(`El grado debe ser un entero entre 0 y ${XEntrada.length - 1}.`);
@@ -251,6 +280,23 @@
     const clasificacion = xEvaluar >= minimo && xEvaluar <= maximo
       ? "interpolación"
       : "extrapolación";
+    const advertencias = obtenerAdvertencias(X, Y, diferencias.coeficientes);
+    if (validaciones.some(({ valido }) => !valido)) {
+      advertencias.push("Newton no reproduce todos los nodos dentro de la tolerancia; estos datos no permiten confirmar un resultado fiable.");
+    }
+    // La conversión a potencias puede sufrir cancelación aunque Newton-Horner sea estable.
+    if ([...X, xEvaluar].some((x) => {
+      try {
+        const anidado = evaluarNewton(diferencias.coeficientes, X, x).valor;
+        const estandar = evaluarEstandar(expansion.coeficientesEstandar, x);
+        return Math.abs(anidado - estandar) > TOLERANCIA_VALIDACION * Math.max(1, Math.abs(anidado));
+      } catch (error) {
+        if (!(error instanceof ValidationError)) throw error;
+        return true;
+      }
+    })) {
+      advertencias.push("La forma estándar pierde precisión por cancelación numérica; utiliza la evaluación Newton-Horner y considera cambiar la escala de X.");
+    }
 
     return {
       grado,
@@ -267,7 +313,7 @@
       pasosEvaluacion: evaluacion.pasos,
       validaciones,
       clasificacion,
-      advertencias: obtenerAdvertencias(X, Y, diferencias.coeficientes)
+      advertencias
     };
   }
 

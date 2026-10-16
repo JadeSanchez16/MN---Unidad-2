@@ -25,7 +25,7 @@ function convertirSuperindice(valor) {
 }
 
 function normalizarCero(valor) {
-  return Math.abs(valor) <= EPSILON_NUMERICO ? 0 : valor;
+  return Object.is(valor, -0) ? 0 : valor;
 }
 
 function formatearDecimal(valor, decimales = 6) {
@@ -33,7 +33,10 @@ function formatearDecimal(valor, decimales = 6) {
   if (Number.isInteger(normalizado)) {
     return String(normalizado);
   }
-  return normalizado.toFixed(decimales).replace(/0+$/, "").replace(/\.$/, "");
+  if (Math.abs(normalizado) < 10 ** -decimales || Math.abs(normalizado) >= 1e12) {
+    return normalizado.toExponential(Math.max(6, decimales)).replace(/(\.\d*?[1-9])0+e/, "$1e").replace(/\.0+e/, "e");
+  }
+  return normalizado.toFixed(decimales).replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
 }
 
 function aproximarFraccion(valor, maximoDenominador = 1000) {
@@ -54,11 +57,11 @@ function aproximarFraccion(valor, maximoDenominador = 1000) {
     if (mejor === null || error < mejor.error) {
       mejor = { numerador: signo * numerador, denominador, error };
     }
-    if (error <= 1e-11 * Math.max(1, absoluto)) {
+    if (numerador !== 0 && Number.isSafeInteger(numerador) && error <= 1e-11 * absoluto) {
       break;
     }
   }
-  return mejor && mejor.error <= 1e-10 * Math.max(1, absoluto) ? mejor : null;
+  return mejor && mejor.numerador !== 0 && Number.isSafeInteger(mejor.numerador) && mejor.error <= 1e-10 * absoluto ? mejor : null;
 }
 
 function formatearExacto(valor) {
@@ -72,7 +75,7 @@ function formatearExacto(valor) {
 function formatearExactoConDecimal(valor) {
   const exacto = formatearExacto(valor);
   const decimal = formatearDecimal(valor);
-  return exacto === decimal ? exacto : `${exacto} (${Number(valor).toFixed(6)})`;
+  return exacto === decimal ? exacto : `${exacto} (${decimal})`;
 }
 
 function nombrePolinomio(grado) {
@@ -95,7 +98,8 @@ function formatearPolinomio(coeficientes, variable = "x") {
     if (potencia === 0) {
       cuerpo = formatearExacto(absoluto);
     } else {
-      const factorCoeficiente = Math.abs(absoluto - 1) <= EPSILON_NUMERICO ? "" : formatearExacto(absoluto);
+      const textoCoeficiente = formatearExacto(absoluto);
+      const factorCoeficiente = Math.abs(absoluto - 1) <= EPSILON_NUMERICO ? "" : /e/.test(textoCoeficiente) ? `(${textoCoeficiente})` : textoCoeficiente;
       const potenciaTexto = potencia === 1 ? "" : convertirSuperindice(potencia);
       cuerpo = `${factorCoeficiente}${variable}${potenciaTexto}`;
     }
@@ -254,7 +258,7 @@ function mostrarResumen(resultado, xEvaluar) {
   document.getElementById("evaluation-label").textContent = `${nombrePolinomio(resultado.grado)}(${formatearDecimal(xEvaluar, 4)})`;
   document.getElementById("interpolated-value").textContent = formatearDecimal(resultado.valor, 6);
   document.getElementById("calculation-kind").textContent = resultado.clasificacion;
-  const usados = resultado.X.map(formatearDecimal).join(", ");
+  const usados = resultado.X.map((x) => formatearDecimal(x)).join(", ");
   document.getElementById("selection-criterion").textContent =
     `Grado ${resultado.grado}: nodos ordenados utilizados X = [${usados}].`;
 
@@ -269,7 +273,7 @@ function mostrarResumen(resultado, xEvaluar) {
 }
 
 function nombreDiferencia(X, inicio, orden) {
-  return `f[${X.slice(inicio, inicio + orden + 1).map(formatearDecimal).join(", ")}]`;
+  return `f[${X.slice(inicio, inicio + orden + 1).map((x) => formatearDecimal(x)).join(", ")}]`;
 }
 
 function mostrarDiferencias(resultado) {
@@ -337,7 +341,7 @@ function sumaFirmada(valores) {
 function mostrarPolinomio(resultado) {
   const nombre = nombrePolinomio(resultado.grado);
   document.getElementById("general-formula").textContent =
-    `${nombre}(x) = Σ aₖ ∏(x - xⱼ), con j = 0, …, k - 1`;
+    `${nombre}(x) = Σ(k = 0, …, ${resultado.grado}) aₖ ∏(j = 0, …, k - 1)(x - xⱼ), con producto vacío = 1`;
   const coeficientes = resultado.coeficientes.map((valor, indice) => `a${convertirSubindice(indice)} = ${formatearExacto(valor)}`).join("; ");
   const nodos = resultado.X.map((valor, indice) => `x${convertirSubindice(indice)} = ${formatearDecimal(valor)}`).join("; ");
   document.getElementById("substituted-formula").textContent = `${coeficientes}; ${nodos}`;
@@ -358,7 +362,7 @@ function mostrarPolinomio(resultado) {
   for (let potencia = resultado.grado; potencia >= 0; potencia -= 1) {
     const aportes = resultado.desarrollos
       .map(({ termino }) => termino[potencia] || 0)
-      .filter((valor) => Math.abs(valor) > EPSILON_NUMERICO);
+      .filter((valor) => valor !== 0);
     const variable = potencia === 0 ? "constante" : potencia === 1 ? "x" : `x${convertirSuperindice(potencia)}`;
     agrupaciones.push(`${variable}: ${sumaFirmada(aportes)} = ${formatearExacto(resultado.coeficientesEstandar[potencia])}`);
   }
@@ -410,7 +414,7 @@ function mostrarValidacion(resultado) {
     crearCelda(fila, formatearDecimal(validacion.x));
     crearCelda(fila, formatearDecimal(validacion.esperado));
     crearCelda(fila, formatearDecimal(validacion.calculado, 9));
-    crearCelda(fila, Math.abs(validacion.diferencia) <= EPSILON_NUMERICO ? "0" : validacion.diferencia.toExponential(3));
+    crearCelda(fila, validacion.diferencia === 0 ? "0" : validacion.diferencia.toExponential(3));
     crearCelda(fila, validacion.valido ? "Coincide" : "No coincide", validacion.valido ? "validation-ok" : "validation-fail");
     cuerpo.append(fila);
   });
@@ -431,6 +435,12 @@ function mostrarComparacion(resultados, gradoSeleccionado, xEvaluar) {
       fila.className = "is-selected";
     }
     crearCelda(fila, String(resultado.grado));
+    if (resultado.error) {
+      const celda = crearCelda(fila, resultado.error, "validation-fail");
+      celda.colSpan = 3;
+      cuerpo.append(fila);
+      return;
+    }
     crearCelda(fila, resultado.X.map((x) => `(${formatearDecimal(x)}, ${formatearDecimal(resultado.Y[resultado.X.indexOf(x)])})`).join(", "));
     crearCelda(fila, formatearPolinomio(resultado.coeficientesEstandar));
     crearCelda(fila, `${nombrePolinomio(resultado.grado)}(${formatearDecimal(xEvaluar)}) = ${formatearDecimal(resultado.valor, 6)} ms`);
@@ -438,39 +448,33 @@ function mostrarComparacion(resultados, gradoSeleccionado, xEvaluar) {
   });
 }
 
-function calcularIntervaloGrafico(nodos, xEvaluar) {
-  const valores = [...nodos.map(({ x }) => x), xEvaluar];
+function calcularRangoGrafico(valores) {
   let minimo = Math.min(...valores);
   let maximo = Math.max(...valores);
-  if (Math.abs(maximo - minimo) <= EPSILON_NUMERICO) {
-    minimo -= 1;
-    maximo += 1;
-  } else {
-    const margen = (maximo - minimo) * 0.12;
-    minimo -= margen;
-    maximo += margen;
+  const amplitud = maximo - minimo;
+  const margen = amplitud === 0 ? Math.max(1, Math.abs(minimo) * 0.12) : amplitud * 0.12;
+  minimo -= margen;
+  maximo += margen;
+  if (!Number.isFinite(minimo) || !Number.isFinite(maximo) || !Number.isFinite(maximo - minimo) || !(maximo > minimo)) {
+    throw new ValidationError("El rango de la gráfica excede la precisión numérica disponible; cambia la escala de los datos.");
   }
   return [minimo, maximo];
 }
 
-function formatearEje(valor) {
+function formatearEje(valor, amplitud) {
   const absoluto = Math.abs(valor);
-  if ((absoluto > 0 && absoluto < 0.01) || absoluto >= 10000) {
-    return valor.toExponential(1);
+  if (absoluto > 0 && (absoluto < 0.001 || absoluto >= 1e7)) {
+    const precision = Math.min(15, Math.max(2, Math.ceil(Math.log10(Math.max(1, absoluto / amplitud))) + 2));
+    return valor.toExponential(precision).replace(/(\.\d*?)0+e/, "$1e").replace(/\.e/, "e");
   }
-  if (absoluto >= 100) {
-    return valor.toFixed(0);
-  }
-  if (absoluto >= 10) {
-    return valor.toFixed(1);
-  }
-  return valor.toFixed(2);
+  const decimales = Math.min(15, Math.max(0, 2 - Math.floor(Math.log10(amplitud))));
+  return formatearDecimal(valor, decimales);
 }
 
 function dibujarGrafica(resultadoSeleccionado, resultados, nodosEntrada, xEvaluar, superponer) {
   const svg = document.getElementById("newton-chart");
-  const [xMin, xMax] = calcularIntervaloGrafico(nodosEntrada, xEvaluar);
-  const curvas = superponer ? resultados : [resultadoSeleccionado];
+  const [xMin, xMax] = calcularRangoGrafico([...nodosEntrada.map(({ x }) => x), xEvaluar]);
+  const curvas = superponer ? resultados.filter((resultado) => !resultado.error) : [resultadoSeleccionado];
   const muestrasPorCurva = curvas.map((resultado) => ({
     resultado,
     muestras: muestrearNewton(resultado.coeficientes, resultado.X, xMin, xMax)
@@ -483,16 +487,17 @@ function dibujarGrafica(resultadoSeleccionado, resultados, nodosEntrada, xEvalua
   if (valoresY.some((valor) => !Number.isFinite(valor))) {
     throw new ValidationError("La gráfica encontró valores no finitos en el intervalo seleccionado.");
   }
-  let yMin = Math.min(...valoresY);
-  let yMax = Math.max(...valoresY);
-  const amplitudY = yMax - yMin;
-  const margenY = amplitudY <= EPSILON_NUMERICO ? Math.max(1, Math.abs(yMax) * 0.12) : amplitudY * 0.12;
-  yMin -= margenY;
-  yMax += margenY;
+  const [yMin, yMax] = calcularRangoGrafico(valoresY);
 
-  const ancho = 960;
-  const alto = 540;
-  const margen = { izquierda: 92, derecha: 34, superior: 32, inferior: 76 };
+  const movil = window.matchMedia("(max-width: 720px)").matches;
+  const ejeYCientifico = [yMin, yMax].some((y) => Math.abs(y) > 0 && (Math.abs(y) < 0.001 || Math.abs(y) >= 1e7));
+  const ancho = movil ? 380 : 960;
+  const alto = movil ? 420 : 540;
+  const margen = movil
+    ? { izquierda: ejeYCientifico ? 100 : 64, derecha: 18, superior: 28, inferior: 64 }
+    : { izquierda: ejeYCientifico ? 132 : 92, derecha: 34, superior: 32, inferior: 76 };
+  svg.setAttribute("viewBox", `0 0 ${ancho} ${alto}`);
+  svg.style.aspectRatio = `${ancho} / ${alto}`;
   const anchoUtil = ancho - margen.izquierda - margen.derecha;
   const altoUtil = alto - margen.superior - margen.inferior;
   const mapearX = (x) => margen.izquierda + ((x - xMin) / (xMax - xMin)) * anchoUtil;
@@ -508,16 +513,17 @@ function dibujarGrafica(resultadoSeleccionado, resultados, nodosEntrada, xEvalua
     const y = yMin + ((yMax - yMin) * indice) / 5;
     const posicionY = mapearY(y);
     svg.append(crearElementoSvg("line", { x1: margen.izquierda, y1: posicionY, x2: ancho - margen.derecha, y2: posicionY, stroke: "#dfe5e9", "stroke-width": 1 }));
-    const etiqueta = crearElementoSvg("text", { x: margen.izquierda - 12, y: posicionY + 5, fill: "#5c6874", "font-size": 14, "text-anchor": "end" });
-    etiqueta.textContent = formatearEje(y);
+    const etiqueta = crearElementoSvg("text", { x: margen.izquierda - 8, y: posicionY + 5, fill: "#5c6874", "font-size": movil ? 12 : 14, "text-anchor": "end" });
+    etiqueta.textContent = formatearEje(y, yMax - yMin);
     svg.append(etiqueta);
   }
-  for (let indice = 0; indice <= 6; indice += 1) {
-    const x = xMin + ((xMax - xMin) * indice) / 6;
+  const divisionesX = movil ? 3 : 6;
+  for (let indice = 0; indice <= divisionesX; indice += 1) {
+    const x = xMin + ((xMax - xMin) * indice) / divisionesX;
     const posicionX = mapearX(x);
     svg.append(crearElementoSvg("line", { x1: posicionX, y1: margen.superior, x2: posicionX, y2: alto - margen.inferior, stroke: "#edf0f2", "stroke-width": 1 }));
-    const etiqueta = crearElementoSvg("text", { x: posicionX, y: alto - margen.inferior + 25, fill: "#5c6874", "font-size": 14, "text-anchor": "middle" });
-    etiqueta.textContent = formatearEje(x);
+    const etiqueta = crearElementoSvg("text", { x: posicionX, y: alto - margen.inferior + 25, fill: "#5c6874", "font-size": movil ? 12 : 14, "text-anchor": "middle" });
+    etiqueta.textContent = formatearEje(x, xMax - xMin);
     svg.append(etiqueta);
   }
 
@@ -563,10 +569,10 @@ function dibujarGrafica(resultadoSeleccionado, resultados, nodosEntrada, xEvalua
   etiquetaPunto.textContent = `(${formatearDecimal(xEvaluar, 3)}, ${formatearDecimal(resultadoSeleccionado.valor, 3)})`;
   svg.append(etiquetaPunto);
 
-  const etiquetaX = crearElementoSvg("text", { x: margen.izquierda + anchoUtil / 2, y: alto - 18, fill: "#17212b", "font-size": 16, "font-weight": 700, "text-anchor": "middle" });
+  const etiquetaX = crearElementoSvg("text", { x: margen.izquierda + anchoUtil / 2, y: alto - 18, fill: "#17212b", "font-size": movil ? 13 : 16, "font-weight": 700, "text-anchor": "middle" });
   etiquetaX.textContent = "Carga de peticiones (100 req/s)";
   svg.append(etiquetaX);
-  const etiquetaY = crearElementoSvg("text", { x: 23, y: margen.superior + altoUtil / 2, fill: "#17212b", "font-size": 16, "font-weight": 700, "text-anchor": "middle", transform: `rotate(-90 23 ${margen.superior + altoUtil / 2})` });
+  const etiquetaY = crearElementoSvg("text", { x: movil ? 17 : 23, y: margen.superior + altoUtil / 2, fill: "#17212b", "font-size": movil ? 13 : 16, "font-weight": 700, "text-anchor": "middle", transform: `rotate(-90 ${movil ? 17 : 23} ${margen.superior + altoUtil / 2})` });
   etiquetaY.textContent = "Latencia de respuesta (ms)";
   svg.append(etiquetaY);
 
@@ -598,8 +604,19 @@ function ejecutarInterpolacion(evento) {
   evento?.preventDefault();
   try {
     const { X, Y, xEvaluar, grado } = leerFormulario();
-    const resultados = Array.from({ length: X.length }, (_, indice) => resolverNewton(X, Y, xEvaluar, indice));
-    const resultado = resultados[grado];
+    const resultado = resolverNewton(X, Y, xEvaluar, grado);
+    const resultados = Array.from({ length: X.length }, (_, indice) => {
+      if (indice === grado) return resultado;
+      try {
+        return resolverNewton(X, Y, xEvaluar, indice);
+      } catch (error) {
+        if (!(error instanceof ValidationError)) throw error;
+        return { grado: indice, error: error.message };
+      }
+    });
+    if (resultados.some((parcial) => parcial.error)) {
+      resultado.advertencias.push("Algunos grados no pudieron calcularse con precisión finita; consulta la comparación de grados.");
+    }
     const nodosEntrada = X.map((x, indice) => ({ x, y: Y[indice] }));
 
     mostrarResumen(resultado, xEvaluar);
@@ -675,6 +692,11 @@ function iniciarAplicacion() {
     }
   });
   document.getElementById("overlay-degrees").addEventListener("change", () => {
+    if (!document.getElementById("calculation-output").hidden) {
+      ejecutarInterpolacion();
+    }
+  });
+  window.matchMedia("(max-width: 720px)").addEventListener("change", () => {
     if (!document.getElementById("calculation-output").hidden) {
       ejecutarInterpolacion();
     }
