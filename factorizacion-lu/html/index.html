@@ -6,7 +6,9 @@
   <meta name="description" content="Resolución de sistemas lineales mediante factorización LU con el método de Doolittle.">
   <title>Factorización LU mediante Doolittle</title>
   <link rel="stylesheet" href="../css/styles.css">
-  <script src="../js/app.js" defer></script>
+  <link rel="stylesheet" href="../../shared/solver-input.css?v=general1">
+  <script src="../../shared/linear-input.js?v=general1" defer></script>
+  <script src="../js/app.js?v=general1" defer></script>
 </head>
 <body>
   <header class="site-header">
@@ -34,7 +36,7 @@
         <p>La matriz de acoplamiento permanece constante mientras los vectores de tráfico cambian.</p>
       </div>
 
-      <p class="context-summary">
+      <p class="context-summary" id="problem-context">
         El clúster consta de tres microservicios (S<sub>1</sub>, S<sub>2</sub> y S<sub>3</sub>) conectados mediante el modelo lineal A · x = b.
       </p>
       <dl class="model-definitions">
@@ -52,7 +54,21 @@
         </div>
       </dl>
 
-      <div class="equation-list" aria-label="Sistema de ecuaciones">
+      <form id="system-form" class="solver-editor" novalidate>
+        <p class="entry-format">Matriz A: una fila por línea y columnas separadas por espacios. Vectores: valores separados por espacios. Decimal: punto.</p>
+        <div class="solver-fields">
+          <label for="input-a">Matriz A<textarea id="input-a" rows="4" spellcheck="false" required></textarea></label>
+          <label for="input-b1">Vector b₁<textarea id="input-b1" rows="4" spellcheck="false" required></textarea></label>
+          <label for="input-b2">Vector b₂<textarea id="input-b2" rows="4" spellcheck="false"></textarea></label>
+        </div>
+        <label class="solver-toggle"><input id="second-scenario" type="checkbox" checked> Resolver también el segundo vector b₂</label>
+        <div class="solver-actions">
+          <button id="clear-button" type="button">Limpiar</button>
+          <button id="restore-button" type="button">Restaurar ejemplo</button>
+        </div>
+      </form>
+
+      <div id="system-equations" class="equation-list" aria-label="Sistema de ecuaciones">
         <article class="equation-row">
           <span class="equation">4x<sub>1</sub> + 2x<sub>2</sub> + x<sub>3</sub> = 14</span>
           <span class="equation-meaning">Tráfico global</span>
@@ -67,7 +83,7 @@
         </article>
       </div>
 
-      <div class="data-grid">
+      <div id="system-preview" class="data-grid">
         <article class="data-panel">
           <h3>Matriz A</h3>
           <div id="matrix-a" class="matrix-host"></div>
@@ -86,9 +102,9 @@
     <div class="action-bar">
       <div>
         <p class="action-title">Cálculo completo</p>
-        <p>Factoriza A una vez y resuelve ambos escenarios.</p>
+        <p id="solve-description">Factoriza A una vez y resuelve ambos escenarios.</p>
       </div>
-      <button id="solve-button" type="button">Resolver sistema</button>
+      <button id="solve-button" type="submit" form="system-form">Resolver sistema</button>
     </div>
 
     <div id="global-status" class="status-message status-info" role="status" aria-live="polite">
@@ -149,7 +165,7 @@
         <div id="scenario-1-status" class="status-message"></div>
       </section>
 
-      <section aria-labelledby="scenario-2-title">
+      <section id="second-scenario-results" aria-labelledby="scenario-2-title">
         <div class="section-heading">
           <div>
             <p class="section-number">04</p>

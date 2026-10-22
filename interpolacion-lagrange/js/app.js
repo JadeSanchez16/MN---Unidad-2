@@ -12,29 +12,31 @@ const {
   interpolarLagrange,
   muestrearPolinomio,
   validarNumero,
-  validarNodos
+  validarNodos,
+  rangoGrafico,
+  intervaloGrafico
 } = motorLagrange;
 
 function formatearNumero(valor, decimales = 6) {
-  const normalizado = Math.abs(valor) < EPSILON_NUMERICO ? 0 : valor;
+  const normalizado = Object.is(valor, -0) ? 0 : valor;
+  if (normalizado !== 0 && Math.abs(normalizado) < 10 ** -decimales) return normalizado.toExponential(6);
   return normalizado.toFixed(decimales);
 }
 
-function formatearEje(valor) {
-  if (Math.abs(valor) >= 100) {
-    return valor.toFixed(0);
+function formatearEje(valor, amplitud) {
+  if (valor !== 0 && (Math.abs(valor) < 0.001 || Math.abs(valor) >= 1e7)) {
+    const precision = Math.min(15, Math.max(3, Math.ceil(Math.log10(Math.max(1, Math.abs(valor) / amplitud))) + 2));
+    return valor.toExponential(precision);
   }
-  if (Math.abs(valor) >= 10) {
-    return valor.toFixed(1);
-  }
-  return valor.toFixed(2);
+  const decimales = Math.min(15, Math.max(0, 2 - Math.floor(Math.log10(amplitud))));
+  return String(Number(valor.toFixed(decimales)));
 }
 
 function formatearDetalle(valor) {
   if (Number.isInteger(valor)) {
     return String(valor);
   }
-  return formatearNumero(valor).replace(/0+$/, "").replace(/\.$/, "");
+  return formatearNumero(valor).replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
 }
 
 function convertirSubindice(valor) {
@@ -79,11 +81,30 @@ function crearFilaNodo(indice, x = "", y = "") {
     fila.append(celda);
   });
 
+  const celda = document.createElement("td");
+  const eliminar = document.createElement("button");
+  eliminar.type = "button";
+  eliminar.className = "secondary-button remove-node-button";
+  eliminar.textContent = "Eliminar";
+  celda.append(eliminar);
+  fila.append(celda);
   return fila;
 }
 
 function actualizarConteoNodos() {
   const cantidad = document.querySelectorAll("#nodes-body .node-row").length;
+  document.querySelectorAll("#nodes-body .node-row").forEach((fila, i) => {
+    fila.querySelector("th").textContent = `x${convertirSubindice(i)}`;
+    ["x", "y"].forEach((variable) => {
+      const campo = fila.querySelector(`.node-${variable}`);
+      campo.id = `${variable}-${i}`;
+      campo.previousElementSibling.htmlFor = campo.id;
+      campo.previousElementSibling.textContent = `${variable === "x" ? "Memoria" : "Latencia"} del nodo ${i}`;
+    });
+    const boton = fila.querySelector(".remove-node-button");
+    boton.disabled = cantidad <= 2;
+    boton.setAttribute("aria-label", `Eliminar nodo ${i}`);
+  });
   document.getElementById("node-count").textContent =
     `${cantidad} nodos · polinomio ${nombrePolinomio(cantidad)}`;
   return cantidad;
@@ -219,7 +240,7 @@ function mostrarSalidas() {
 
 function dibujarGrafica(nodos, xEvaluar, valorEvaluado) {
   const svg = document.getElementById("lagrange-chart");
-  const [xMin, xMax] = INTERVALO_GRAFICA;
+  const [xMin, xMax] = intervaloGrafico(nodos, xEvaluar);
   const muestras = muestrearPolinomio(nodos, xMin, xMax);
   const nodosVisibles = nodos.filter(({ x }) => x >= xMin && x <= xMax);
   const evaluacionVisible = xEvaluar >= xMin && xEvaluar <= xMax;
@@ -229,16 +250,15 @@ function dibujarGrafica(nodos, xEvaluar, valorEvaluado) {
     ...(evaluacionVisible ? [valorEvaluado] : [])
   ];
 
-  let yMin = Math.min(...valoresY);
-  let yMax = Math.max(...valoresY);
-  const amplitud = yMax - yMin;
-  const margenY = amplitud <= EPSILON_NUMERICO ? Math.max(1, Math.abs(yMax) * 0.1) : amplitud * 0.12;
-  yMin -= margenY;
-  yMax += margenY;
+  const [yMin, yMax] = rangoGrafico(valoresY);
 
-  const ancho = 900;
-  const alto = 500;
-  const margen = { izquierda: 82, derecha: 30, superior: 28, inferior: 68 };
+  const movil = window.matchMedia("(max-width: 720px)").matches;
+  const ancho = movil ? 380 : 900;
+  const alto = movil ? 420 : 500;
+  const cientifico = [yMin, yMax].some((y) => y !== 0 && (Math.abs(y) < 0.001 || Math.abs(y) >= 1e7));
+  const margen = { izquierda: cientifico ? 110 : movil ? 64 : 82, derecha: movil ? 18 : 30, superior: 28, inferior: 68 };
+  svg.setAttribute("viewBox", `0 0 ${ancho} ${alto}`);
+  svg.style.aspectRatio = `${ancho} / ${alto}`;
   const anchoUtil = ancho - margen.izquierda - margen.derecha;
   const altoUtil = alto - margen.superior - margen.inferior;
   const mapearX = (x) => margen.izquierda + ((x - xMin) / (xMax - xMin)) * anchoUtil;
@@ -275,11 +295,13 @@ function dibujarGrafica(nodos, xEvaluar, valorEvaluado) {
       "font-size": 14,
       "text-anchor": "end"
     });
-    etiqueta.textContent = formatearEje(y);
+    etiqueta.textContent = formatearEje(y, yMax - yMin);
     svg.append(etiqueta);
   }
 
-  for (let x = xMin; x <= xMax; x += 2) {
+  const divisiones = movil ? 3 : 5;
+  for (let i = 0; i <= divisiones; i += 1) {
+    const x = xMin + (xMax - xMin) * i / divisiones;
     const posicionX = mapearX(x);
     svg.append(crearElementoSvg("line", {
       x1: posicionX,
@@ -296,7 +318,7 @@ function dibujarGrafica(nodos, xEvaluar, valorEvaluado) {
       "font-size": 14,
       "text-anchor": "middle"
     });
-    etiqueta.textContent = String(x);
+    etiqueta.textContent = formatearEje(x, xMax - xMin);
     svg.append(etiqueta);
   }
 
@@ -381,7 +403,7 @@ function dibujarGrafica(nodos, xEvaluar, valorEvaluado) {
     x: margen.izquierda + anchoUtil / 2,
     y: alto - 16,
     fill: "#17212b",
-    "font-size": 16,
+    "font-size": movil ? 13 : 16,
     "font-weight": 700,
     "text-anchor": "middle"
   });
@@ -392,7 +414,7 @@ function dibujarGrafica(nodos, xEvaluar, valorEvaluado) {
     x: 22,
     y: margen.superior + altoUtil / 2,
     fill: "#17212b",
-    "font-size": 16,
+    "font-size": movil ? 13 : 16,
     "font-weight": 700,
     "text-anchor": "middle",
     transform: `rotate(-90 22 ${margen.superior + altoUtil / 2})`
@@ -401,9 +423,9 @@ function dibujarGrafica(nodos, xEvaluar, valorEvaluado) {
   svg.append(etiquetaY);
 
   const nota = document.getElementById("chart-note");
-  nota.textContent = evaluacionVisible
-    ? `Punto interpolado: (${formatearNumero(xEvaluar, 2)}, ${formatearNumero(valorEvaluado, 2)} ms).`
-    : `El resultado fue calculado, pero x = ${formatearNumero(xEvaluar, 2)} está fuera del intervalo gráfico [2, 12].`;
+  const esInterpolacion = xEvaluar >= Math.min(...nodos.map(({ x }) => x)) && xEvaluar <= Math.max(...nodos.map(({ x }) => x));
+  nota.textContent = `${esInterpolacion ? "Interpolación" : "Extrapolación"}: (${formatearNumero(xEvaluar, 2)}, ${formatearNumero(valorEvaluado, 2)} ms).`;
+  document.getElementById("chart-description-text").textContent = `Polinomio ${nombrePolinomio(nodos.length)}(x) en [${formatearDetalle(xMin)}, ${formatearDetalle(xMax)}].`;
 }
 
 function ejecutarInterpolacion(evento) {
@@ -462,6 +484,27 @@ function iniciarAplicacion() {
   formulario.addEventListener("submit", ejecutarInterpolacion);
   formulario.addEventListener("input", marcarDatosPendientes);
   document.getElementById("add-node-button").addEventListener("click", agregarNodo);
+  document.getElementById("nodes-body").addEventListener("click", (evento) => {
+    const boton = evento.target.closest(".remove-node-button");
+    if (!boton || boton.disabled) return;
+    boton.closest("tr").remove();
+    actualizarConteoNodos();
+    limpiarSalidas();
+    actualizarEstado("Nodo eliminado. Listo para recalcular.", "info");
+  });
+  document.getElementById("clear-button").addEventListener("click", () => {
+    formulario.querySelectorAll("input").forEach((campo) => { campo.value = ""; });
+    limpiarSalidas();
+    actualizarEstado("Campos vacíos. Introduce los nodos del nuevo ejercicio.", "info");
+  });
+  document.getElementById("restore-button").addEventListener("click", () => {
+    cargarDatosIniciales();
+    limpiarSalidas();
+    actualizarEstado("Ejemplo original restaurado. Listo para calcular.", "info");
+  });
+  window.matchMedia("(max-width: 720px)").addEventListener("change", () => {
+    if (!document.getElementById("result-section").hidden) ejecutarInterpolacion();
+  });
   limpiarSalidas();
 }
 

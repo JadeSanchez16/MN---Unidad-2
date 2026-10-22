@@ -215,9 +215,9 @@ function probarLagrange() {
   assert.equal((html.match(/id="final-sum"/g) || []).length, 1);
   assert.equal((html.match(/class="calculation-output"[^>]*hidden/g) || []).length, 3);
   assert.match(html, /class="return-home-button" href="\.\.\/\.\.\/index\.html">Retornar al inicio<\/a>/);
-  assert.match(html, /<script src="\.\.\/js\/lagrange\.js" defer><\/script>[\s\S]*<script src="\.\.\/js\/app\.js" defer><\/script>/);
+  assert.match(html, /<script src="\.\.\/js\/lagrange\.js(?:\?v=[^"]+)?" defer><\/script>[\s\S]*<script src="\.\.\/js\/app\.js(?:\?v=[^"]+)?" defer><\/script>/);
   assert.doesNotMatch(html, /55\.250000|55\.25 ms/);
-  assert.doesNotMatch(codigoAplicacion, /iniciarAplicacion\(\)[\s\S]*ejecutarInterpolacion\(\);/);
+  assert.doesNotMatch(codigoAplicacion, /cargarDatosIniciales\(\);\s*ejecutarInterpolacion\(\);/);
   assert.match(codigoAplicacion, /formulario\.addEventListener\("submit", ejecutarInterpolacion\)/);
   assert.match(codigoAplicacion, /mostrarProcedimiento\(resultado, xEvaluar\)[\s\S]*mostrarSalidas\(\)/);
 
@@ -403,6 +403,7 @@ probarLU();
 probarJacobi();
 probarLagrange();
 probarNewton();
+require("./general-solvers.js")();
 console.log("PASS - regresión de factorización LU");
 console.log("PASS - convergencia y resultados del método de Jacobi");
 console.log("PASS - interpolación de Lagrange y datos dinámicos");

@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Interpolación de Lagrange con nodos dinámicos para estimar la latencia de un microservicio.">
   <title>Interpolación de Lagrange - Sesión 8</title>
-  <link rel="stylesheet" href="../css/styles.css">
-  <script src="../js/lagrange.js" defer></script>
-  <script src="../js/app.js" defer></script>
+  <link rel="stylesheet" href="../css/styles.css?v=general1">
+  <script src="../js/lagrange.js?v=general1" defer></script>
+  <script src="../js/app.js?v=general1" defer></script>
 </head>
 <body>
   <header class="site-header">
@@ -43,6 +43,7 @@
                 <th scope="col">Nodo</th>
                 <th scope="col">Memoria x (GB)</th>
                 <th scope="col">Latencia y (ms)</th>
+                <th scope="col">Acción</th>
               </tr>
             </thead>
             <tbody id="nodes-body"></tbody>
@@ -51,6 +52,8 @@
 
         <div class="input-actions">
           <button id="add-node-button" class="secondary-button" type="button">Agregar nodo</button>
+          <button id="clear-button" class="secondary-button" type="button">Limpiar</button>
+          <button id="restore-button" class="secondary-button" type="button">Restaurar ejemplo</button>
           <span id="node-count" aria-live="polite"></span>
         </div>
 

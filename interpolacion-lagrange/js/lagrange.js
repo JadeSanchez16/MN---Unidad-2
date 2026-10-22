@@ -29,8 +29,8 @@
       throw new ValidationError("Se requieren al menos dos nodos (x, y).");
     }
 
-    nodos.forEach((nodo, indice) => {
-      if (nodo === null || typeof nodo !== "object") {
+    Array.from(nodos).forEach((nodo, indice) => {
+      if (!nodo || typeof nodo !== "object") {
         throw new ValidationError(`El nodo ${indice} no es válido.`);
       }
       validarNumero(nodo.x, `x${indice}`);
@@ -39,8 +39,7 @@
 
     for (let i = 0; i < nodos.length; i += 1) {
       for (let j = i + 1; j < nodos.length; j += 1) {
-        const escala = Math.max(1, Math.abs(nodos[i].x), Math.abs(nodos[j].x));
-        if (Math.abs(nodos[i].x - nodos[j].x) <= EPSILON_NUMERICO * escala) {
+        if (nodos[i].x === nodos[j].x) {
           throw new ValidationError("Todos los valores de x deben ser distintos.");
         }
       }
@@ -64,8 +63,13 @@
         if (i !== k) {
           const factorNumerador = xEvaluar - nodos[i].x;
           const factorDenominador = nodos[k].x - nodos[i].x;
+          const anteriorNumerador = numerador;
           numerador *= factorNumerador;
           denominador *= factorDenominador;
+          if (!Number.isFinite(numerador) || !Number.isFinite(denominador) || denominador === 0
+            || (numerador === 0 && anteriorNumerador !== 0 && factorNumerador !== 0)) {
+            throw new ValidationError("Los productos de Lagrange exceden la precisión numérica disponible; cambia la escala de los nodos.");
+          }
           factores.push({
             indice: i,
             xComparado: nodos[i].x,
@@ -115,6 +119,28 @@
     });
   }
 
+  function rangoGrafico(valores) {
+    if (!Array.isArray(valores) || !valores.length) throw new ValidationError("La gráfica necesita valores finitos.");
+    valores.forEach((valor) => validarNumero(valor, "La coordenada"));
+    let minimo = Math.min(...valores);
+    let maximo = Math.max(...valores);
+    const margen = maximo === minimo ? Math.max(1, Math.abs(minimo) * 0.12) : (maximo - minimo) * 0.12;
+    minimo -= margen;
+    maximo += margen;
+    if (!Number.isFinite(minimo) || !Number.isFinite(maximo) || !Number.isFinite(maximo - minimo) || !(maximo > minimo)) {
+      throw new ValidationError("El rango de la gráfica excede la precisión numérica disponible; cambia la escala de los datos.");
+    }
+    return [minimo, maximo];
+  }
+
+  function intervaloGrafico(nodos, xEvaluar) {
+    validarNodos(nodos);
+    validarNumero(xEvaluar, "El punto a evaluar");
+    const originales = nodos.length === NODOS_INICIALES.length && nodos.every((nodo, i) => nodo.x === NODOS_INICIALES[i].x && nodo.y === NODOS_INICIALES[i].y);
+    if (originales && xEvaluar >= INTERVALO_GRAFICA[0] && xEvaluar <= INTERVALO_GRAFICA[1]) return [...INTERVALO_GRAFICA];
+    return rangoGrafico([...nodos.map(({ x }) => x), xEvaluar]);
+  }
+
   const API = Object.freeze({
     EPSILON_NUMERICO,
     INTERVALO_GRAFICA,
@@ -124,7 +150,9 @@
     interpolarLagrange,
     muestrearPolinomio,
     validarNumero,
-    validarNodos
+    validarNodos,
+    rangoGrafico,
+    intervaloGrafico
   });
 
   if (typeof module !== "undefined" && module.exports) {

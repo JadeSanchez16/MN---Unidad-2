@@ -190,6 +190,7 @@ section {
 }
 
 .input-actions {
+  flex-wrap: wrap;
   display: flex;
   gap: 16px;
   align-items: center;

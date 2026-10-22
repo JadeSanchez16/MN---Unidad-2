@@ -685,6 +685,11 @@ function iniciarAplicacion() {
     cargarDatosIniciales();
     ejecutarInterpolacion();
   });
+  document.getElementById("clear-button").addEventListener("click", () => {
+    formulario.querySelectorAll('input[type="number"]').forEach((campo) => { campo.value = ""; });
+    ocultarResultados();
+    actualizarEstado("Campos vacíos. Introduce los nodos y el punto a evaluar.", "info");
+  });
 
   document.getElementById("degree-select").addEventListener("change", () => {
     if (!document.getElementById("calculation-output").hidden) {

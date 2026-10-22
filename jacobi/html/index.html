@@ -6,7 +6,9 @@
   <meta name="description" content="Resolución de un sistema lineal de cuatro servidores mediante el método de Jacobi.">
   <title>Método de Jacobi - Sesión 7</title>
   <link rel="stylesheet" href="../css/styles.css">
-  <script src="../js/app.js" defer></script>
+  <link rel="stylesheet" href="../../shared/solver-input.css?v=general1">
+  <script src="../../shared/linear-input.js?v=general1" defer></script>
+  <script src="../js/app.js?v=general1" defer></script>
 </head>
 <body>
   <header class="site-header">
@@ -34,14 +36,31 @@
         <p>Cada incógnita representa miles de peticiones por minuto asignadas a un servidor.</p>
       </div>
 
-      <div class="equation-list" aria-label="Sistema de ecuaciones">
+      <form id="system-form" class="solver-editor" novalidate>
+        <p class="entry-format">Matriz A: una fila por línea y columnas separadas por espacios. Vectores: valores separados por espacios. Decimal: punto.</p>
+        <div class="solver-fields">
+          <label for="input-a">Matriz A<textarea id="input-a" rows="4" spellcheck="false" required></textarea></label>
+          <label for="input-b">Vector b<textarea id="input-b" rows="4" spellcheck="false" required></textarea></label>
+          <label for="input-x0">Vector inicial x⁽⁰⁾<textarea id="input-x0" rows="4" spellcheck="false" required></textarea></label>
+        </div>
+        <div class="solver-parameters">
+          <label for="input-tolerance">Tolerancia<input id="input-tolerance" type="number" step="any" min="0" required></label>
+          <label for="input-max-iterations">Máximo de iteraciones<input id="input-max-iterations" type="number" min="1" step="1" required></label>
+        </div>
+        <div class="solver-actions">
+          <button id="clear-button" type="button">Limpiar</button>
+          <button id="restore-button" type="button">Restaurar ejemplo</button>
+        </div>
+      </form>
+
+      <div id="system-equations" class="equation-list" aria-label="Sistema de ecuaciones">
         <div class="equation-row">10x<sub>1</sub> - 2x<sub>2</sub> - x<sub>3</sub> = 15</div>
         <div class="equation-row">-x<sub>1</sub> + 8x<sub>2</sub> - 2x<sub>4</sub> = 18</div>
         <div class="equation-row">-2x<sub>1</sub> + 12x<sub>3</sub> - 3x<sub>4</sub> = 25</div>
         <div class="equation-row">-x<sub>2</sub> - 2x<sub>3</sub> + 9x<sub>4</sub> = 20</div>
       </div>
 
-      <div class="data-grid">
+      <div id="system-preview" class="data-grid">
         <article class="data-panel">
           <h3>Matriz A</h3>
           <div id="matrix-a" class="matrix-host"></div>
@@ -62,7 +81,7 @@
       </div>
     </section>
 
-    <section aria-labelledby="convergence-title">
+    <section id="convergence-section" aria-labelledby="convergence-title">
       <div class="section-heading">
         <div>
           <p class="section-number">02</p>
@@ -91,7 +110,7 @@
         </table>
       </div>
       <div id="dominance-status" class="status-message" role="status"></div>
-      <p class="theorem-note">
+      <p class="theorem-note" id="theorem-note">
         <strong>Garantía teórica:</strong> la dominancia diagonal estricta es una condición suficiente para que el método de Jacobi converja hacia la solución única desde cualquier vector inicial; por tanto, también converge desde x<sup>(0)</sup> = [0, 0, 0, 0]<sup>T</sup>.
       </p>
     </section>
@@ -105,7 +124,7 @@
         <p>Cada componente nuevo usa exclusivamente valores de la iteración anterior.</p>
       </div>
 
-      <div class="formula-grid">
+      <div id="iteration-formulas" class="formula-grid">
         <div>x<sub>1</sub><sup>(k+1)</sup> = (15 + 2x<sub>2</sub><sup>(k)</sup> + x<sub>3</sub><sup>(k)</sup>) / 10</div>
         <div>x<sub>2</sub><sup>(k+1)</sup> = (18 + x<sub>1</sub><sup>(k)</sup> + 2x<sub>4</sub><sup>(k)</sup>) / 8</div>
         <div>x<sub>3</sub><sup>(k+1)</sup> = (25 + 2x<sub>1</sub><sup>(k)</sup> + 3x<sub>4</sub><sup>(k)</sup>) / 12</div>
@@ -119,9 +138,9 @@
       <div class="action-bar">
         <div>
           <p class="action-title">Cálculo iterativo completo</p>
-          <p>Inicia en el vector cero y se detiene cuando E<sub>k</sub> ≤ 10<sup>-4</sup>.</p>
+          <p id="stopping-description">Inicia en el vector cero y se detiene cuando E<sub>k</sub> ≤ 10<sup>-4</sup>.</p>
         </div>
-        <button id="solve-button" type="button">Ejecutar Jacobi</button>
+        <button id="solve-button" type="submit" form="system-form">Ejecutar Jacobi</button>
       </div>
       <div id="global-status" class="status-message status-info" role="status" aria-live="polite">
         Listo para iniciar el cálculo.
@@ -141,7 +160,7 @@
         <div class="table-scroll">
           <table class="data-table iteration-table">
             <thead>
-              <tr>
+              <tr id="iteration-header">
                 <th scope="col">k</th>
                 <th scope="col">x<sub>1</sub><sup>(k)</sup></th>
                 <th scope="col">x<sub>2</sub><sup>(k)</sup></th>
@@ -153,6 +172,10 @@
             <tbody id="iteration-body"></tbody>
           </table>
         </div>
+        <details id="iteration-development" class="iteration-development">
+          <summary>Operaciones de cada iteración</summary>
+          <ol id="iteration-steps"></ol>
+        </details>
       </section>
 
       <section aria-labelledby="solution-title">
@@ -161,7 +184,7 @@
             <p class="section-number">05</p>
             <h2 id="solution-title">Solución final aproximada</h2>
           </div>
-          <p>Resultado obtenido al satisfacer el criterio de parada solicitado.</p>
+          <p>Última aproximación obtenida y comprobación del criterio de parada.</p>
         </div>
 
         <div class="solution-layout">
@@ -173,6 +196,7 @@
             <div><dt>Iteraciones</dt><dd id="final-iterations"></dd></div>
             <div><dt>Error final</dt><dd id="final-error"></dd></div>
             <div><dt>Tolerancia</dt><dd id="final-tolerance"></dd></div>
+            <div><dt>||b − Ax||∞</dt><dd id="final-residual"></dd></div>
           </dl>
         </div>
         <div id="final-status" class="status-message" role="status"></div>

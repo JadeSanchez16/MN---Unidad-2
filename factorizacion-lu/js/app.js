@@ -5,6 +5,8 @@
 // ==================================================
 
 const EPSILON = 1e-9;
+const entradaLineal = typeof module !== "undefined" && module.exports
+  ? require("../../shared/linear-input.js") : window.LinearInput;
 
 const A = Object.freeze([
   Object.freeze([4, 2, 1]),
@@ -25,17 +27,19 @@ function validarMatrizCuadrada(matriz) {
   }
 
   const dimension = matriz.length;
-  matriz.forEach((fila, indice) => {
+  for (let indice = 0; indice < dimension; indice += 1) {
+    const fila = matriz[indice];
     if (!Array.isArray(fila) || fila.length !== dimension) {
       throw new TypeError(`La fila ${indice + 1} no tiene ${dimension} elementos; la matriz debe ser cuadrada.`);
     }
 
-    fila.forEach((valor) => {
+    for (let columna = 0; columna < dimension; columna += 1) {
+      const valor = fila[columna];
       if (typeof valor !== "number" || !Number.isFinite(valor)) {
         throw new TypeError("Todos los elementos de la matriz deben ser números finitos.");
       }
-    });
-  });
+    }
+  }
 
   return true;
 }
@@ -47,7 +51,7 @@ function validarVector(matriz, vector) {
     throw new TypeError(`El vector debe contener exactamente ${matriz.length} elementos.`);
   }
 
-  if (!vector.every((valor) => typeof valor === "number" && Number.isFinite(valor))) {
+  if (!Array.from(vector).every((valor) => typeof valor === "number" && Number.isFinite(valor))) {
     throw new TypeError("Todos los elementos del vector deben ser números finitos.");
   }
 
@@ -115,7 +119,8 @@ function multiplicarMatrizVector(matriz, vector) {
 }
 
 function aproximadamenteIguales(valorA, valorB, tolerancia = EPSILON) {
-  return Math.abs(valorA - valorB) <= tolerancia;
+  return Number.isFinite(valorA) && Number.isFinite(valorB)
+    && Math.abs(valorA - valorB) <= tolerancia * Math.max(1, Math.abs(valorA), Math.abs(valorB));
 }
 
 function vectoresAproximadamenteIguales(vectorA, vectorB, tolerancia = EPSILON) {
@@ -133,9 +138,10 @@ function formatearNumero(numero) {
     return String(numero);
   }
 
-  const normalizado = Math.abs(numero) < EPSILON ? 0 : numero;
+  const normalizado = Object.is(numero, -0) ? 0 : numero;
+  if (normalizado !== 0 && Math.abs(normalizado) < 1e-6) return normalizado.toExponential(6);
   const enteroCercano = Math.round(normalizado);
-  if (aproximadamenteIguales(normalizado, enteroCercano)) {
+  if (Math.abs(normalizado - enteroCercano) <= EPSILON) {
     return String(enteroCercano);
   }
 
@@ -163,9 +169,10 @@ function factorizarDoolittle(matriz) {
         suma += L[i][k] * U[k][j];
       }
       U[i][j] = datos[i][j] - suma;
+      validarResultadoNumerico([U[i][j]], "La matriz U");
     }
 
-    if (Math.abs(U[i][i]) <= EPSILON) {
+    if (U[i][i] === 0) {
       throw new ArithmeticError(`El pivote U[${i + 1}][${i + 1}] es cero o demasiado pequeño. No se puede continuar sin pivoteo.`);
     }
 
@@ -175,6 +182,7 @@ function factorizarDoolittle(matriz) {
         suma += L[j][k] * U[k][i];
       }
       L[j][i] = (datos[j][i] - suma) / U[i][i];
+      validarResultadoNumerico([L[j][i]], "La matriz L");
     }
   }
 
@@ -190,7 +198,7 @@ function sustitucionAdelante(L, b) {
   const y = Array(L.length).fill(0);
 
   for (let i = 0; i < L.length; i += 1) {
-    if (Math.abs(L[i][i]) <= EPSILON) {
+    if (L[i][i] === 0) {
       throw new ArithmeticError(`El pivote L[${i + 1}][${i + 1}] es cero o demasiado pequeño.`);
     }
 
@@ -214,7 +222,7 @@ function sustitucionAtras(U, y) {
   const x = Array(U.length).fill(0);
 
   for (let i = U.length - 1; i >= 0; i -= 1) {
-    if (Math.abs(U[i][i]) <= EPSILON) {
+    if (U[i][i] === 0) {
       throw new ArithmeticError(`El pivote U[${i + 1}][${i + 1}] es cero o demasiado pequeño.`);
     }
 
@@ -238,13 +246,20 @@ function resolverConFactores(matriz, L, U, b) {
   const y = sustitucionAdelante(L, b);
   const x = sustitucionAtras(U, y);
   const productoAx = multiplicarMatrizVector(matriz, x);
+  validarResultadoNumerico(productoAx, "El producto A·x");
+  const residuo = Math.max(...b.map((valor, i) => Math.abs(valor - productoAx[i])));
+  const escala = Math.max(...b.map(Math.abs), ...matriz.map((fila) => fila.reduce((suma, valor, j) => suma + Math.abs(valor * x[j]), 0)));
+  validarResultadoNumerico([residuo, escala], "La verificación residual");
+  const errorResidual = escala === 0 ? residuo : residuo / escala;
 
   return {
     b: [...b],
     y,
     x,
     productoAx,
-    verificado: vectoresAproximadamenteIguales(productoAx, b)
+    residuo,
+    errorResidual,
+    verificado: Number.isFinite(errorResidual) && errorResidual <= EPSILON
   };
 }
 
@@ -488,35 +503,96 @@ function ejecutarPruebasInternas(resultados) {
 // FLUJO PRINCIPAL
 // ==================================================
 
-function resolverSistema() {
+function leerSistema() {
+  const matriz = entradaLineal.matriz(document.getElementById("input-a").value);
+  const b1 = entradaLineal.vector(document.getElementById("input-b1").value, "El vector b₁");
+  const b2 = document.getElementById("second-scenario").checked
+    ? entradaLineal.vector(document.getElementById("input-b2").value, "El vector b₂") : null;
+  validarVector(matriz, b1);
+  if (b2) validarVector(matriz, b2);
+  return { matriz, b1, b2 };
+}
+
+let presentacionOriginal;
+
+function mostrarSistema(matriz, b1, b2) {
+  document.getElementById("solve-description").textContent = b2
+    ? "Factoriza A una vez y resuelve ambos escenarios." : "Factoriza A y resuelve el vector b₁.";
+  mostrarMatriz("matrix-a", matriz);
+  mostrarVector("vector-b1", b1);
+  document.getElementById("vector-b2").closest("article").hidden = !b2;
+  if (b2) mostrarVector("vector-b2", b2);
+  const original = JSON.stringify(matriz) === JSON.stringify(A) && JSON.stringify(b1) === JSON.stringify(B1);
+  const ecuaciones = document.getElementById("system-equations");
+  if (original) {
+    ecuaciones.innerHTML = presentacionOriginal.ecuaciones;
+    document.getElementById("problem-context").innerHTML = presentacionOriginal.contexto;
+  } else {
+    ecuaciones.replaceChildren(...entradaLineal.ecuaciones(matriz, b1, formatearNumero).map((texto) => {
+      const fila = document.createElement("article");
+      fila.className = "equation-row";
+      fila.textContent = texto;
+      return fila;
+    }));
+    document.getElementById("problem-context").textContent = `Sistema A·x = b de ${matriz.length} ${matriz.length === 1 ? "incógnita" : "incógnitas"}. Doolittle sin pivoteo: todos los pivotes deben ser distintos de cero.`;
+  }
+  ecuaciones.hidden = false;
+  document.getElementById("system-preview").hidden = false;
+}
+
+function invalidarSistema() {
+  limpiarResultados();
+  document.getElementById("system-equations").hidden = true;
+  document.getElementById("system-preview").hidden = true;
+  const estado = document.getElementById("global-status");
+  estado.className = "status-message status-info";
+  estado.textContent = "Datos modificados. Calcula para actualizar el sistema y sus resultados.";
+}
+
+function restaurarEjemplo() {
+  document.getElementById("input-a").value = entradaLineal.textoMatriz(A);
+  document.getElementById("input-b1").value = B1.join(" ");
+  document.getElementById("input-b2").value = B2.join(" ");
+  document.getElementById("second-scenario").checked = true;
+  document.getElementById("input-b2").disabled = false;
+  invalidarSistema();
+  mostrarSistema(A, B1, B2);
+  document.getElementById("global-status").textContent = "Ejemplo original restaurado. Listo para calcular.";
+}
+
+function resolverSistema(evento) {
+  evento?.preventDefault();
   const estadoGlobal = document.getElementById("global-status");
   limpiarResultados();
 
   try {
-    validarMatrizCuadrada(A);
-    validarVector(A, B1);
-    validarVector(A, B2);
+    const { matriz, b1, b2 } = leerSistema();
+    mostrarSistema(matriz, b1, b2);
 
     // Única factorización válida del flujo principal; ambos escenarios reutilizan estos objetos.
-    const { L, U } = factorizarDoolittle(A);
+    const { L, U } = factorizarDoolittle(matriz);
     const productoLU = multiplicarMatrices(L, U);
-    const factorizacionCorrecta = matricesAproximadamenteIguales(productoLU, A);
+    const factorizacionCorrecta = matricesAproximadamenteIguales(productoLU, matriz);
 
-    const escenario1 = resolverConFactores(A, L, U, B1);
-    const escenario2 = resolverConFactores(A, L, U, B2);
+    const escenario1 = resolverConFactores(matriz, L, U, b1);
+    const escenario2 = b2 ? resolverConFactores(matriz, L, U, b2) : null;
     const resultados = { L, U, productoLU, escenario1, escenario2 };
-    const pruebas = ejecutarPruebasInternas(resultados);
+    const esEjemplo = JSON.stringify([matriz, b1, b2]) === JSON.stringify([A, B1, B2]);
+    const pruebas = esEjemplo ? ejecutarPruebasInternas(resultados) : null;
 
     mostrarMatriz("matrix-l", L);
     mostrarMatriz("matrix-u", U);
     mostrarMatriz("matrix-lu", productoLU);
-    mostrarPasos("doolittle-steps", describirDoolittle(A, L, U));
+    mostrarPasos("doolittle-steps", describirDoolittle(matriz, L, U));
     mostrarEscenario("scenario-1-content", escenario1, 1);
-    mostrarPasos("scenario-1-forward-steps", describirSustitucionAdelante(L, B1, escenario1.y));
+    mostrarPasos("scenario-1-forward-steps", describirSustitucionAdelante(L, b1, escenario1.y));
     mostrarPasos("scenario-1-backward-steps", describirSustitucionAtras(U, escenario1.y, escenario1.x));
-    mostrarEscenario("scenario-2-content", escenario2, 2);
-    mostrarPasos("scenario-2-forward-steps", describirSustitucionAdelante(L, B2, escenario2.y));
-    mostrarPasos("scenario-2-backward-steps", describirSustitucionAtras(U, escenario2.y, escenario2.x));
+    document.getElementById("second-scenario-results").hidden = !escenario2;
+    if (escenario2) {
+      mostrarEscenario("scenario-2-content", escenario2, 2);
+      mostrarPasos("scenario-2-forward-steps", describirSustitucionAdelante(L, b2, escenario2.y));
+      mostrarPasos("scenario-2-backward-steps", describirSustitucionAtras(U, escenario2.y, escenario2.x));
+    }
 
     actualizarEstado(
       document.getElementById("factorization-status"),
@@ -525,37 +601,57 @@ function resolverSistema() {
     );
     actualizarEstado(
       document.getElementById("scenario-1-status"),
-      `Verificación A·x = b1: ${escenario1.verificado ? "CORRECTA" : "ERROR"}`,
+      `Verificación A·x = b1: ${escenario1.verificado ? "CORRECTA" : "ERROR"}. ||b1 − Ax||∞ = ${formatearNumero(escenario1.residuo)}`,
       escenario1.verificado
     );
-    actualizarEstado(
+    if (escenario2) actualizarEstado(
       document.getElementById("scenario-2-status"),
-      `Verificación A·x = b2: ${escenario2.verificado ? "CORRECTA" : "ERROR"}`,
+      `Verificación A·x = b2: ${escenario2.verificado ? "CORRECTA" : "ERROR"}. ||b2 − Ax||∞ = ${formatearNumero(escenario2.residuo)}`,
       escenario2.verificado
     );
 
     const todoCorrecto = factorizacionCorrecta
       && escenario1.verificado
-      && escenario2.verificado
-      && pruebas.todasAprobadas;
+      && (!escenario2 || escenario2.verificado)
+      && (!pruebas || pruebas.todasAprobadas);
+    const pivoteSensible = U.some((fila, i) => Math.abs(fila[i]) <= 1e-12 * Math.max(...matriz[i].map(Math.abs)));
 
     actualizarEstado(
       estadoGlobal,
       todoCorrecto
         ? `Cálculo terminado correctamente.`
-        : "El cálculo terminó con verificaciones pendientes. Revisa la consola.",
+        : "El cálculo terminó con verificaciones pendientes. Revisa la factorización y los residuos.",
       todoCorrecto
     );
+    if (pivoteSensible) {
+      estadoGlobal.className = "status-message status-info";
+      estadoGlobal.textContent += " Advertencia: un pivote es pequeño respecto a los datos; los resultados pueden ser sensibles al redondeo.";
+    }
     document.getElementById("results").hidden = false;
   } catch (error) {
-    console.error(error);
+    if (!(error instanceof TypeError) && !(error instanceof ArithmeticError)) console.error(error);
     actualizarEstado(estadoGlobal, `No fue posible resolver el sistema: ${error.message}`, false);
   }
 }
 
 function iniciarAplicacion() {
-  mostrarDatosIniciales();
-  document.getElementById("solve-button").addEventListener("click", resolverSistema);
+  presentacionOriginal = {
+    ecuaciones: document.getElementById("system-equations").innerHTML,
+    contexto: document.getElementById("problem-context").innerHTML
+  };
+  restaurarEjemplo();
+  const formulario = document.getElementById("system-form");
+  formulario.addEventListener("submit", resolverSistema);
+  formulario.addEventListener("input", invalidarSistema);
+  document.getElementById("second-scenario").addEventListener("change", (evento) => {
+    document.getElementById("input-b2").disabled = !evento.target.checked;
+  });
+  document.getElementById("restore-button").addEventListener("click", restaurarEjemplo);
+  document.getElementById("clear-button").addEventListener("click", () => {
+    ["input-a", "input-b1", "input-b2"].forEach((id) => { document.getElementById(id).value = ""; });
+    invalidarSistema();
+    document.getElementById("input-a").focus();
+  });
 }
 
 if (typeof document !== "undefined") {
@@ -567,6 +663,7 @@ if (typeof module !== "undefined" && module.exports) {
     A,
     B1,
     B2,
+    formatearNumero,
     factorizarDoolittle,
     sustitucionAdelante,
     sustitucionAtras,

@@ -1,0 +1,36 @@
+.solver-editor {
+  margin: 24px 0;
+  padding: 24px 0;
+  border-block: 1px solid #dfe5e9;
+}
+.solver-fields { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 20px; }
+.solver-editor label { display: flex; flex-direction: column; gap: 8px; min-width: 0; font-weight: 700; }
+.solver-editor textarea,
+.solver-editor input[type="number"] {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #aebbc5;
+  border-radius: 4px;
+  background: #fff;
+  color: #17212b;
+  font: 1rem Consolas, monospace;
+  line-height: 1.6;
+}
+.solver-editor textarea { min-height: 120px; resize: vertical; }
+.solver-editor :focus-visible { outline: 3px solid #d9b34c; outline-offset: 2px; }
+.solver-parameters { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+.solver-editor .solver-toggle { flex-direction: row; align-items: center; margin: 16px 0; font-weight: 400; }
+.solver-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+.solver-actions button { background: #fff; color: #12304a; border: 1px solid #12304a; }
+.solver-actions button:hover { background: #e8eef2; }
+.solver-editor .entry-format { margin: 0 0 16px; color: #5c6874; }
+.solver-editor textarea:disabled { opacity: 0.55; }
+.iteration-development { margin-top: 24px; }
+.iteration-development summary { cursor: pointer; font-weight: 700; padding: 12px 0; }
+.iteration-development li { padding: 12px 0; overflow-wrap: anywhere; }
+[hidden] { display: none !important; }
+@media (max-width: 720px) {
+  .solver-fields, .solver-parameters { grid-template-columns: 1fr; }
+  .solver-actions button { flex: 1 1 auto; }
+}

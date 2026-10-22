@@ -7,6 +7,8 @@
 const EPSILON_NUMERICO = 1e-12;
 const TOLERANCIA_JACOBI = 1e-4;
 const MAX_ITERACIONES = 1000;
+const entradaLineal = typeof module !== "undefined" && module.exports
+  ? require("../../shared/linear-input.js") : window.LinearInput;
 
 const A_JACOBI = Object.freeze([
   Object.freeze([10, -2, -1, 0]),
@@ -35,26 +37,28 @@ function validarMatrizCuadrada(matriz) {
   }
 
   const dimension = matriz.length;
-  matriz.forEach((fila, indice) => {
+  for (let indice = 0; indice < dimension; indice += 1) {
+    const fila = matriz[indice];
     if (!Array.isArray(fila) || fila.length !== dimension) {
       throw new TypeError(`La fila ${indice + 1} debe contener ${dimension} elementos.`);
     }
-    if (!fila.every((valor) => typeof valor === "number" && Number.isFinite(valor))) {
+    if (!Array.from(fila).every((valor) => typeof valor === "number" && Number.isFinite(valor))) {
       throw new TypeError("Todos los coeficientes deben ser números finitos.");
     }
-  });
+  }
 }
 
 function validarVector(vector, dimension, nombre) {
   if (!Array.isArray(vector) || vector.length !== dimension) {
     throw new TypeError(`${nombre} debe contener exactamente ${dimension} elementos.`);
   }
-  if (!vector.every((valor) => typeof valor === "number" && Number.isFinite(valor))) {
+  if (!Array.from(vector).every((valor) => typeof valor === "number" && Number.isFinite(valor))) {
     throw new TypeError(`${nombre} solo puede contener números finitos.`);
   }
 }
 
 function normaInfinito(vector) {
+  if (!Array.isArray(vector) || vector.length === 0) throw new TypeError("El vector no puede estar vacío.");
   validarVector(vector, vector.length, "El vector");
   return Math.max(...vector.map((valor) => Math.abs(valor)));
 }
@@ -67,8 +71,8 @@ function calcularErrorRelativo(actual, anterior) {
   const numerador = normaInfinito(diferencia);
   const denominador = normaInfinito(actual);
 
-  if (denominador <= EPSILON_NUMERICO) {
-    return numerador <= EPSILON_NUMERICO ? 0 : Number.POSITIVE_INFINITY;
+  if (denominador === 0) {
+    return numerador === 0 ? 0 : Number.POSITIVE_INFINITY;
   }
 
   return numerador / denominador;
@@ -83,6 +87,7 @@ function analizarDominanciaDiagonal(matriz) {
       .filter((_, columna) => columna !== indice)
       .map((valor) => Math.abs(valor));
     const sumaNoDiagonal = terminosNoDiagonales.reduce((suma, valor) => suma + valor, 0);
+    if (!Number.isFinite(sumaNoDiagonal)) throw new ArithmeticError("La suma de coeficientes excede el rango numérico permitido.");
 
     return {
       fila: indice + 1,
@@ -106,7 +111,7 @@ function iterarJacobi(matriz, vectorB, anterior) {
 
   return matriz.map((fila, i) => {
     const diagonal = fila[i];
-    if (Math.abs(diagonal) <= EPSILON_NUMERICO) {
+    if (diagonal === 0) {
       throw new ArithmeticError(`El elemento diagonal a[${i + 1},${i + 1}] es cero o demasiado pequeño.`);
     }
 
@@ -114,7 +119,9 @@ function iterarJacobi(matriz, vectorB, anterior) {
       (suma, coeficiente, j) => suma + (j === i ? 0 : coeficiente * anterior[j]),
       0
     );
-    return (vectorB[i] - sumaNoDiagonal) / diagonal;
+    const valor = (vectorB[i] - sumaNoDiagonal) / diagonal;
+    if (!Number.isFinite(valor)) throw new ArithmeticError(`La iteración produjo un valor no finito en x${i + 1}; el método puede estar divergiendo.`);
+    return valor;
   });
 }
 
@@ -132,7 +139,7 @@ function resolverJacobi(
   if (typeof tolerancia !== "number" || !Number.isFinite(tolerancia) || tolerancia <= 0) {
     throw new TypeError("La tolerancia debe ser un número finito mayor que cero.");
   }
-  if (!Number.isInteger(maxIteraciones) || maxIteraciones <= 0) {
+  if (!Number.isSafeInteger(maxIteraciones) || maxIteraciones <= 0) {
     throw new TypeError("El máximo de iteraciones debe ser un entero positivo.");
   }
 
@@ -157,7 +164,10 @@ function resolverJacobi(
         iteraciones: k,
         errorFinal: error,
         convergio: true,
-        dominancia
+        dominancia,
+        inicial: [...inicial],
+        tolerancia,
+        residuo: calcularResiduo(matriz, actual, vectorB)
       };
     }
 
@@ -170,7 +180,10 @@ function resolverJacobi(
     iteraciones: historial.length,
     errorFinal: historial.at(-1)?.error ?? Number.POSITIVE_INFINITY,
     convergio: false,
-    dominancia
+    dominancia,
+    inicial: [...inicial],
+    tolerancia,
+    residuo: calcularResiduo(matriz, anterior, vectorB)
   };
 }
 
@@ -186,14 +199,17 @@ function multiplicarMatrizVector(matriz, vector) {
 function calcularResiduo(matriz, solucion, vectorB) {
   const producto = multiplicarMatrizVector(matriz, solucion);
   validarVector(vectorB, producto.length, "El vector b");
-  return vectorB.map((valor, indice) => valor - producto[indice]);
+  const residuo = vectorB.map((valor, indice) => valor - producto[indice]);
+  validarVector(residuo, matriz.length, "El residuo");
+  return residuo;
 }
 
 function formatearNumero(numero, decimales = 6) {
   if (!Number.isFinite(numero)) {
     return String(numero);
   }
-  const normalizado = Math.abs(numero) < EPSILON_NUMERICO ? 0 : numero;
+  const normalizado = Object.is(numero, -0) ? 0 : numero;
+  if (normalizado !== 0 && Math.abs(normalizado) < 10 ** -decimales) return normalizado.toExponential(6);
   return normalizado.toFixed(decimales);
 }
 
@@ -202,6 +218,11 @@ function formatearError(error) {
     return String(error);
   }
   return error === 0 ? "0" : error.toExponential(6);
+}
+
+function formatearDetalle(numero) {
+  if (Number.isInteger(numero)) return String(numero);
+  return formatearNumero(numero).replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
 }
 
 // ==================================================
@@ -249,10 +270,10 @@ function mostrarDominancia(analisis) {
     const fila = document.createElement("tr");
     const valores = [
       detalle.fila,
-      formatearNumero(detalle.diagonal, 0),
-      detalle.terminosNoDiagonales.map((valor) => formatearNumero(valor, 0)).join(" + "),
-      formatearNumero(detalle.sumaNoDiagonal, 0),
-      `${formatearNumero(detalle.diagonal, 0)} > ${formatearNumero(detalle.sumaNoDiagonal, 0)}`
+      formatearDetalle(detalle.diagonal),
+      detalle.terminosNoDiagonales.map(formatearDetalle).join(" + ") || "0",
+      formatearDetalle(detalle.sumaNoDiagonal),
+      `${formatearDetalle(detalle.diagonal)} ${detalle.dominante ? ">" : "≤"} ${formatearDetalle(detalle.sumaNoDiagonal)}`
     ];
 
     valores.forEach((valor, indice) => {
@@ -270,14 +291,21 @@ function mostrarDominancia(analisis) {
   const estado = document.getElementById("dominance-status");
   estado.className = `status-message ${analisis.esEstrictamenteDominante ? "status-success" : "status-error"}`;
   estado.textContent = analisis.esEstrictamenteDominante
-    ? "Las cuatro desigualdades se cumplen: A es estrictamente diagonal dominante por filas."
+    ? `${analisis.filas.length === 1 ? "La desigualdad se cumple" : `Las ${analisis.filas.length} desigualdades se cumplen`}: A es estrictamente diagonal dominante por filas.`
     : "La matriz no es estrictamente diagonal dominante; este criterio no garantiza la convergencia.";
 }
 
 function mostrarHistorial(resultado) {
   const cuerpo = document.getElementById("iteration-body");
   const filaInicial = document.createElement("tr");
-  ["0", ...X_INICIAL.map(() => "0.000000"), "-"].forEach((valor) => {
+  const cabecera = document.getElementById("iteration-header");
+  cabecera.replaceChildren(...["k", ...resultado.inicial.map((_, i) => `x${i + 1}⁽ᵏ⁾`), "Error relativo"].map((texto) => {
+    const celda = document.createElement("th");
+    celda.scope = "col";
+    celda.textContent = texto;
+    return celda;
+  }));
+  ["0", ...resultado.inicial.map((valor) => formatearNumero(valor)), "-"].forEach((valor) => {
     const celda = document.createElement("td");
     celda.textContent = valor;
     filaInicial.append(celda);
@@ -303,12 +331,13 @@ function mostrarResultadoFinal(resultado) {
   );
   document.getElementById("final-iterations").textContent = String(resultado.iteraciones);
   document.getElementById("final-error").textContent = formatearError(resultado.errorFinal);
-  document.getElementById("final-tolerance").textContent = TOLERANCIA_JACOBI.toExponential(0);
+  document.getElementById("final-tolerance").textContent = formatearError(resultado.tolerancia);
+  document.getElementById("final-residual").textContent = formatearError(normaInfinito(resultado.residuo));
 
   const estado = document.getElementById("final-status");
   estado.className = `status-message ${resultado.convergio ? "status-success" : "status-error"}`;
   estado.textContent = resultado.convergio
-    ? `Convergencia alcanzada: ${formatearError(resultado.errorFinal)} ≤ ${TOLERANCIA_JACOBI.toExponential(0)}.`
+    ? `Criterio de parada alcanzado: ${formatearError(resultado.errorFinal)} ≤ ${formatearError(resultado.tolerancia)}.`
     : `No se alcanzó la tolerancia en ${resultado.iteraciones} iteraciones.`;
 }
 
@@ -318,20 +347,103 @@ function actualizarEstadoGlobal(mensaje, correcto) {
   estado.textContent = mensaje;
 }
 
-function ejecutarJacobi() {
+function describirIteracion(matriz, b, anterior, actual) {
+  return matriz.map((fila, i) => {
+    const productos = fila.flatMap((coeficiente, j) => j === i || coeficiente === 0
+      ? [] : [`(${formatearDetalle(coeficiente)})(${formatearDetalle(anterior[j])})`]);
+    return `x${i + 1} = (${formatearDetalle(b[i])} − [${productos.join(" + ") || "0"}]) / ${formatearDetalle(fila[i])} = ${formatearDetalle(actual[i])}`;
+  });
+}
+
+let vistaOriginal;
+let datosOperaciones = null;
+
+function leerSistema() {
+  const matriz = entradaLineal.matriz(document.getElementById("input-a").value);
+  const b = entradaLineal.vector(document.getElementById("input-b").value, "El vector b");
+  const inicial = entradaLineal.vector(document.getElementById("input-x0").value, "El vector inicial");
+  const tolerancia = entradaLineal.numero(document.getElementById("input-tolerance").value, "La tolerancia");
+  const maxIteraciones = entradaLineal.numero(document.getElementById("input-max-iterations").value, "El máximo de iteraciones");
+  validarVector(b, matriz.length, "El vector b");
+  validarVector(inicial, matriz.length, "El vector inicial");
+  return { matriz, b, inicial, tolerancia, maxIteraciones };
+}
+
+function mostrarSistema(datos) {
+  const { matriz, b, inicial, tolerancia, maxIteraciones } = datos;
+  const original = JSON.stringify([matriz, b]) === JSON.stringify([A_JACOBI, B_JACOBI]);
+  document.getElementById("system-title").textContent = original ? vistaOriginal.titulo : `Sistema de ${matriz.length} ${matriz.length === 1 ? "incógnita" : "incógnitas"}`;
+  document.querySelector(".subtitle").textContent = original ? vistaOriginal.subtitulo : "Resolución iterativa de un sistema lineal";
+  document.querySelector(".intro-section .section-heading > p").textContent = original
+    ? vistaOriginal.contexto : "Sistema A·x = b con el vector inicial y los parámetros ingresados.";
+  const ecuaciones = document.getElementById("system-equations");
+  const formulas = document.getElementById("iteration-formulas");
+  if (original) {
+    ecuaciones.innerHTML = vistaOriginal.ecuaciones;
+    formulas.innerHTML = vistaOriginal.formulas;
+  } else {
+    ecuaciones.replaceChildren(...entradaLineal.ecuaciones(matriz, b, formatearDetalle).map((texto) => {
+      const fila = document.createElement("div");
+      fila.className = "equation-row";
+      fila.textContent = texto;
+      return fila;
+    }));
+    formulas.replaceChildren(...matriz.map((fila, i) => {
+      const formula = document.createElement("div");
+      const productos = fila.flatMap((coeficiente, j) => j === i || coeficiente === 0 ? [] : [`(${formatearDetalle(coeficiente)})x${j + 1}⁽ᵏ⁾`]);
+      formula.textContent = `x${i + 1}⁽ᵏ⁺¹⁾ = (${formatearDetalle(b[i])} − [${productos.join(" + ") || "0"}]) / ${formatearDetalle(fila[i])}`;
+      return formula;
+    }));
+  }
+  document.getElementById("matrix-a").replaceChildren(crearTablaMatriz(matriz, "Matriz A"));
+  document.getElementById("vector-b").replaceChildren(crearTablaMatriz(b.map((x) => [x]), "Vector b"));
+  document.getElementById("vector-x0").replaceChildren(crearTablaMatriz(inicial.map((x) => [x]), "Vector inicial"));
+  document.getElementById("tolerance-value").textContent = formatearError(tolerancia);
+  document.getElementById("stopping-description").textContent = `Vector inicial: [${inicial.map(formatearDetalle).join(", ")}]. Parada: Eₖ ≤ ${formatearError(tolerancia)}; máximo ${maxIteraciones} iteraciones.`;
+  document.getElementById("theorem-note").textContent = "Garantía teórica: la dominancia diagonal estricta por filas es una condición suficiente de convergencia desde cualquier vector inicial. Si no se cumple, este criterio no garantiza ni descarta la convergencia; revisa el historial y el residuo.";
+  ["system-equations", "system-preview", "convergence-section", "iteration-formulas"].forEach((id) => {
+    document.getElementById(id).hidden = false;
+  });
+  mostrarDominancia(analizarDominanciaDiagonal(matriz));
+}
+
+function invalidarSistema() {
+  ["results", "system-equations", "system-preview", "convergence-section", "iteration-formulas"].forEach((id) => {
+    document.getElementById(id).hidden = true;
+  });
+  datosOperaciones = null;
+  document.getElementById("iteration-development").open = false;
+  document.getElementById("iteration-steps").replaceChildren();
+  document.getElementById("stopping-description").textContent = "Datos modificados. Calcula con los valores ingresados.";
+  const estado = document.getElementById("global-status");
+  estado.className = "status-message status-info";
+  estado.textContent = "Datos modificados. Listo para un nuevo cálculo.";
+}
+
+function restaurarEjemplo() {
+  document.getElementById("input-a").value = entradaLineal.textoMatriz(A_JACOBI);
+  document.getElementById("input-b").value = B_JACOBI.join(" ");
+  document.getElementById("input-x0").value = X_INICIAL.join(" ");
+  document.getElementById("input-tolerance").value = TOLERANCIA_JACOBI;
+  document.getElementById("input-max-iterations").value = MAX_ITERACIONES;
+  invalidarSistema();
+  mostrarSistema({ matriz: A_JACOBI, b: B_JACOBI, inicial: X_INICIAL, tolerancia: TOLERANCIA_JACOBI, maxIteraciones: MAX_ITERACIONES });
+  document.getElementById("global-status").textContent = "Ejemplo original restaurado. Listo para calcular.";
+}
+
+function ejecutarJacobi(evento) {
+  evento?.preventDefault();
   const resultados = document.getElementById("results");
-  resultados.hidden = true;
+  invalidarSistema();
 
   try {
-    const resultado = resolverJacobi(
-      A_JACOBI,
-      B_JACOBI,
-      X_INICIAL,
-      TOLERANCIA_JACOBI
-    );
+    const datos = leerSistema();
+    mostrarSistema(datos);
+    const resultado = resolverJacobi(datos.matriz, datos.b, datos.inicial, datos.tolerancia, datos.maxIteraciones);
 
     mostrarHistorial(resultado);
     mostrarResultadoFinal(resultado);
+    datosOperaciones = { ...datos, resultado };
     resultados.hidden = false;
     actualizarEstadoGlobal(
       resultado.convergio
@@ -339,16 +451,45 @@ function ejecutarJacobi() {
         : "El cálculo terminó sin alcanzar la tolerancia.",
       resultado.convergio
     );
+    if (!resultado.dominancia.esEstrictamenteDominante) {
+      document.getElementById("global-status").textContent += " Advertencia: no se cumple el criterio suficiente de dominancia diagonal; revisa el residuo y las iteraciones.";
+    }
   } catch (error) {
-    console.error(error);
+    if (!(error instanceof TypeError) && !(error instanceof ArithmeticError)) console.error(error);
     actualizarEstadoGlobal(`No fue posible ejecutar Jacobi: ${error.message}`, false);
   }
 }
 
 function iniciarAplicacion() {
-  mostrarDatosIniciales();
-  mostrarDominancia(analizarDominanciaDiagonal(A_JACOBI));
-  document.getElementById("solve-button").addEventListener("click", ejecutarJacobi);
+  vistaOriginal = {
+    ecuaciones: document.getElementById("system-equations").innerHTML,
+    formulas: document.getElementById("iteration-formulas").innerHTML,
+    titulo: document.getElementById("system-title").textContent,
+    subtitulo: document.querySelector(".subtitle").textContent,
+    contexto: document.querySelector(".intro-section .section-heading > p").textContent
+  };
+  restaurarEjemplo();
+  const formulario = document.getElementById("system-form");
+  formulario.addEventListener("submit", ejecutarJacobi);
+  formulario.addEventListener("input", invalidarSistema);
+  document.getElementById("restore-button").addEventListener("click", restaurarEjemplo);
+  document.getElementById("clear-button").addEventListener("click", () => {
+    formulario.querySelectorAll("textarea, input").forEach((campo) => { campo.value = ""; });
+    invalidarSistema();
+    document.getElementById("input-a").focus();
+  });
+  document.getElementById("iteration-development").addEventListener("toggle", (evento) => {
+    if (!evento.target.open || !datosOperaciones || document.getElementById("iteration-steps").children.length) return;
+    const { matriz, b, inicial, resultado } = datosOperaciones;
+    let anterior = inicial;
+    const pasos = resultado.historial.map(({ iteracion, vector }) => {
+      const item = document.createElement("li");
+      item.textContent = `Iteración ${iteracion}: ${describirIteracion(matriz, b, anterior, vector).join("; ")}`;
+      anterior = vector;
+      return item;
+    });
+    document.getElementById("iteration-steps").replaceChildren(...pasos);
+  });
 }
 
 if (typeof document !== "undefined") {
@@ -366,6 +507,7 @@ if (typeof module !== "undefined" && module.exports) {
     calcularResiduo,
     iterarJacobi,
     normaInfinito,
-    resolverJacobi
+    resolverJacobi,
+    describirIteracion
   };
 }
