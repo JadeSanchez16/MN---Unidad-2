@@ -3,6 +3,7 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const vm = require("node:vm");
 const panels = require("../shared/exercise-panels.js");
 
 module.exports = function probarApartados() {
@@ -67,6 +68,29 @@ module.exports = function probarApartados() {
     assert.match(app, /ExercisePanels\.montar\(crearAplicacion\)/);
     assert.match(app, /if \(!esOriginal\) document\.getElementById\("clear-button"\)\.click\(\)/);
     assert.match(app, /activar\(\) \{ if \(esOriginal\)/);
+    if (sesion === "jacobi") {
+      assert.match(html, /id="convergence-section"[^>]*hidden/);
+      assert.match(html, /id="iteration-section"[^>]*hidden/);
+      assert.ok(html.indexOf('id="solve-button"') < html.indexOf('id="convergence-section"'));
+    }
+    const activacion = app.match(/^return \{ activar\(\).*\};$/m);
+    assert.ok(activacion, `Controlador de ${sesion}`);
+    for (const esOriginal of [true, false]) {
+      let calculos = 0;
+      let restauraciones = 0;
+      const contexto = {
+        esOriginal,
+        restaurarEjemplo() { restauraciones++; },
+        cargarDatosIniciales() { restauraciones++; },
+        limpiarSalidas() {}, ocultarResultados() {}, actualizarEstado() {},
+        ejecutarInterpolacion() { calculos++; },
+        resolverSistema() { calculos++; }, ejecutarJacobi() { calculos++; }
+      };
+      const controlador = vm.runInNewContext(`(${activacion[0].slice(7, -1)})`, contexto);
+      controlador.activar();
+      assert.equal(calculos, 0, `${sesion}: no debe calcular al activar la pestaña`);
+      assert.equal(restauraciones, esOriginal ? 1 : 0, `${sesion}: no debe borrar el ejercicio nuevo`);
+    }
   }
   console.log("PASS - apartados independientes: consultas, campos, referencias y montaje compartido");
 };

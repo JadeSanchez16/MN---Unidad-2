@@ -7,20 +7,20 @@
   <title>Método de Jacobi - Sesión 7</title>
   <link rel="stylesheet" href="../css/styles.css">
   <link rel="stylesheet" href="../../shared/solver-input.css?v=general1">
-  <link rel="stylesheet" href="../../shared/exercise-panels.css?v=apartados2">
+  <link rel="stylesheet" href="../../shared/exercise-panels.css?v=organizado2">
   <script src="../../shared/linear-input.js?v=general1" defer></script>
-  <script src="../../shared/exercise-panels.js?v=apartados2" defer></script>
-  <script src="../js/app.js?v=apartados2" defer></script>
+  <script src="../../shared/exercise-panels.js?v=organizado1" defer></script>
+  <script src="../js/app.js?v=organizado1" defer></script>
 </head>
 <body>
   <header class="site-header">
     <div class="header-content">
       <nav class="module-nav" aria-label="Navegación entre sesiones">
         <a href="../../index.html">Inicio</a>
-        <a href="../../factorizacion-lu/html/index.html?v=nav4">Sesión 6: LU</a>
+        <a href="../../factorizacion-lu/html/index.html?v=nav5">Sesión 6: LU</a>
         <span aria-current="page">Sesión 7: Jacobi</span>
-        <a href="../../interpolacion-lagrange/html/index.html?v=nav4">Sesión 8: Lagrange</a>
-        <a href="../../interpolacion-newton/html/index.html?v=nav4">Sesión 9: Newton</a>
+        <a href="../../interpolacion-lagrange/html/index.html?v=nav5">Sesión 8: Lagrange</a>
+        <a href="../../interpolacion-newton/html/index.html?v=nav5">Sesión 9: Newton</a>
       </nav>
       <p class="course-label">Métodos Numéricos - Sesión 7</p>
       <h1>Solución mediante el método de Jacobi</h1>
@@ -83,7 +83,18 @@
       </div>
     </section>
 
-    <section id="convergence-section" aria-labelledby="convergence-title">
+    <div class="action-bar">
+      <div>
+        <p class="action-title">Cálculo iterativo completo</p>
+        <p id="stopping-description">Inicia en el vector cero y se detiene cuando E<sub>k</sub> ≤ 10<sup>-4</sup>.</p>
+      </div>
+      <button id="solve-button" type="submit" form="system-form">Ejecutar Jacobi</button>
+    </div>
+    <div id="global-status" class="status-message status-info" role="status" aria-live="polite">
+      Listo para iniciar el cálculo.
+    </div>
+
+    <section id="convergence-section" aria-labelledby="convergence-title" hidden>
       <div class="section-heading">
         <div>
           <p class="section-number">02</p>
@@ -117,7 +128,7 @@
       </p>
     </section>
 
-    <section aria-labelledby="formulas-title">
+    <section id="iteration-section" aria-labelledby="formulas-title" hidden>
       <div class="section-heading">
         <div>
           <p class="section-number">03</p>
@@ -137,16 +148,6 @@
         E<sub>k</sub> = ||x<sup>(k)</sup> - x<sup>(k-1)</sup>||<sub>∞</sub> / ||x<sup>(k)</sup>||<sub>∞</sub>
       </div>
 
-      <div class="action-bar">
-        <div>
-          <p class="action-title">Cálculo iterativo completo</p>
-          <p id="stopping-description">Inicia en el vector cero y se detiene cuando E<sub>k</sub> ≤ 10<sup>-4</sup>.</p>
-        </div>
-        <button id="solve-button" type="submit" form="system-form">Ejecutar Jacobi</button>
-      </div>
-      <div id="global-status" class="status-message status-info" role="status" aria-live="polite">
-        Listo para iniciar el cálculo.
-      </div>
     </section>
 
     <div id="results" hidden>

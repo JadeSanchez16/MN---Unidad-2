@@ -4,15 +4,22 @@
 
 Las sesiones 06, 07, 08 y 09 abren el apartado **Ejercicio original de la
 tarea**. Sus datos se leen de las constantes originales y se calculan con el
-algoritmo existente; no se almacenan respuestas prefabricadas. Los campos
+algoritmo existente al pulsar resolver, ejecutar o calcular; no se almacenan
+respuestas prefabricadas. Los campos
 académicos están protegidos y no pueden ser sustituidos por el ejercicio nuevo.
 
 **Resolver un nuevo ejercicio** comienza con campos vacíos y mantiene sus
 propios datos y resultados mientras se cambia entre los dos apartados de la
 misma página. No se guarda información entre recargas ni entre sesiones.
 Restaurar copia los datos académicos solamente al apartado activo. Limpiar
-la tarea oculta sus resultados sin borrar sus datos; calcular, restaurar o
-regresar a su pestaña vuelve a generar su resolución original.
+la tarea oculta sus resultados sin borrar sus datos. Restaurar o regresar a
+su pestaña recupera los datos originales y mantiene la resolución oculta.
+Solamente el botón principal despliega el procedimiento y los resultados.
+En Jacobi esto incluye la demostración de convergencia y el esquema iterativo.
+
+El formulario nuevo organiza los datos y parámetros en dos grupos semánticos
+con comandos separados al final. En móvil estos grupos se apilan sin cambiar
+los controles, las asociaciones de sus etiquetas ni los eventos de cálculo.
 
 `shared/exercise-panels.js` crea los apartados a partir de la plantilla existente,
 con identificadores, etiquetas, formularios y referencias accesibles separados.
@@ -47,6 +54,11 @@ También se verificaron:
 - Gráficas separadas sin identificadores duplicados, con nodos, curva y evaluación.
 - Navegación entre las cuatro sesiones y retorno al inicio.
 - Diseño a 390 × 844: pestañas legibles y tablas con desplazamiento propio.
+- Resoluciones originales ocultas al entrar, restaurar y cambiar de apartado;
+  resultados correctos después de pulsar cada botón principal.
+- Formularios reorganizados: matrices, vectores, parámetros, nodos dinámicos,
+  selección de grado y botones conservan sus eventos y su formulario asociado.
+- Nuevo diseño móvil sin desbordamiento horizontal de página en las cuatro sesiones.
 
 La validación numérica se realiza con tolerancias de punto flotante; no constituye
 una garantía para cualquier problema mal condicionado ni elimina las limitaciones

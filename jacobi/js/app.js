@@ -411,7 +411,7 @@ function mostrarSistema(datos) {
   document.getElementById("tolerance-value").textContent = formatearError(tolerancia);
   document.getElementById("stopping-description").textContent = `Vector inicial: [${inicial.map(formatearDetalle).join(", ")}]. Parada: Eₖ ≤ ${formatearError(tolerancia)}; máximo ${maxIteraciones} iteraciones.`;
   document.getElementById("theorem-note").textContent = "Garantía teórica: la dominancia diagonal estricta por filas es una condición suficiente de convergencia desde cualquier vector inicial. Si no se cumple, este criterio no garantiza ni descarta la convergencia; revisa el historial y el residuo.";
-  ["system-equations", "system-preview", "convergence-section", "iteration-formulas"].forEach((id) => {
+  ["system-equations", "system-preview", "convergence-section", "iteration-section", "iteration-formulas"].forEach((id) => {
     document.getElementById(id).hidden = false;
   });
   mostrarDominancia(analizarDominanciaDiagonal(matriz));
@@ -419,7 +419,7 @@ function mostrarSistema(datos) {
 
 function invalidarSistema() {
   if (!esOriginal) document.getElementById("system-title").textContent = "Datos del nuevo sistema";
-  ["results", "system-equations", "system-preview", "convergence-section", "iteration-formulas"].forEach((id) => {
+  ["results", "system-equations", "system-preview", "convergence-section", "iteration-section", "iteration-formulas"].forEach((id) => {
     document.getElementById(id).hidden = true;
   });
   datosOperaciones = null;
@@ -439,6 +439,7 @@ function restaurarEjemplo() {
   document.getElementById("input-max-iterations").value = MAX_ITERACIONES;
   invalidarSistema();
   mostrarSistema({ matriz: A_JACOBI, b: B_JACOBI, inicial: X_INICIAL, tolerancia: TOLERANCIA_JACOBI, maxIteraciones: MAX_ITERACIONES });
+  ["convergence-section", "iteration-section"].forEach((id) => { document.getElementById(id).hidden = true; });
   document.getElementById("global-status").textContent = "Ejemplo original restaurado. Listo para calcular.";
 }
 
@@ -484,11 +485,10 @@ function iniciarAplicacion() {
   formulario.addEventListener("input", invalidarSistema);
   document.getElementById("restore-button").addEventListener("click", () => {
     restaurarEjemplo();
-    if (esOriginal) ejecutarJacobi();
   });
   document.getElementById("clear-button").addEventListener("click", () => {
     if (esOriginal) {
-      document.getElementById("results").hidden = true;
+      ["results", "convergence-section", "iteration-section"].forEach((id) => { document.getElementById(id).hidden = true; });
       const estado = document.getElementById("global-status");
       estado.className = "status-message status-info";
       estado.textContent = "Resultados borrados. Los datos originales de la tarea se conservan.";
@@ -514,7 +514,7 @@ function iniciarAplicacion() {
 
 iniciarAplicacion();
 if (!esOriginal) document.getElementById("clear-button").click();
-return { activar() { if (esOriginal) { restaurarEjemplo(); ejecutarJacobi(); } } };
+return { activar() { if (esOriginal) restaurarEjemplo(); } };
 }
 
 if (typeof document !== "undefined") {

@@ -32,6 +32,58 @@
     });
   }
 
+  function organizarSolucionador(panel, documento) {
+    const formulario = panel.querySelector("form");
+    const seccion = formulario.closest("section");
+    seccion.classList.add("solver-workspace");
+    formulario.classList.add("solver-workbench");
+    const interpolacion = Boolean(formulario.querySelector(".input-table"));
+    const distribucion = documento.createElement("div");
+    distribucion.className = "solver-entry-layout";
+    function grupo(nombre, clase) {
+      const campo = documento.createElement("fieldset");
+      campo.className = clase;
+      const leyenda = documento.createElement("legend");
+      leyenda.textContent = nombre;
+      campo.append(leyenda);
+      distribucion.append(campo);
+      return campo;
+    }
+    const datos = grupo(interpolacion ? "Nodos de interpolación" : "Sistema de ecuaciones", "solver-data");
+    const parametros = grupo("Parámetros del método", "solver-settings");
+    if (interpolacion) {
+      datos.append(formulario.querySelector(".table-scroll"));
+      const barra = formulario.querySelector(".calculation-bar");
+      Array.from(barra.querySelectorAll(":scope > label")).forEach((etiqueta) => parametros.append(etiqueta));
+    } else {
+      datos.append(formulario.querySelector(".solver-fields"));
+      const formato = formulario.querySelector(".entry-format");
+      if (formato) datos.append(formato);
+      formulario.querySelectorAll(".solver-parameters, .solver-toggle").forEach((campo) => parametros.append(campo));
+    }
+    const comandos = documento.createElement("div");
+    comandos.className = "solver-commandbar";
+    const calcular = formulario.querySelector('button[type="submit"]') || panel.querySelector("#new-solve-button");
+    comandos.append(calcular);
+    const utilidades = documento.createElement("div");
+    utilidades.className = "solver-utilities";
+    ["clear-button", "restore-button"].forEach((id) => utilidades.append(panel.querySelector(`#new-${id}`)));
+    comandos.append(utilidades);
+    const accionesNodos = formulario.querySelector(".input-actions");
+    if (accionesNodos) datos.append(accionesNodos);
+    formulario.prepend(distribucion);
+    formulario.append(comandos);
+
+    const barraAccion = panel.querySelector(".action-bar");
+    if (barraAccion) {
+      barraAccion.className = "solver-run-summary";
+      formulario.append(barraAccion);
+    }
+    const estado = panel.querySelector("#new-global-status, #new-calculation-status");
+    formulario.append(estado);
+    formulario.querySelectorAll(".solver-actions, .calculation-bar").forEach((vacio) => vacio.remove());
+  }
+
   function montar(inicializar) {
     const documento = global.document;
     const principal = documento.querySelector("main");
@@ -79,6 +131,7 @@
     apartados.forEach((apartado) => {
       const vista = crearVista(apartado.panel, apartado.prefijo, documento);
       apartado.controlador = inicializar(vista, apartado.clave);
+      if (apartado.clave === "nuevo") organizarSolucionador(apartado.panel, documento);
       const restaurar = vista.getElementById("restore-button");
       restaurar.textContent = apartado.clave === "original" ? "Restaurar tarea" : "Restaurar datos originales";
       if (apartado.clave === "original") {
@@ -118,7 +171,7 @@
     seleccionar("original");
   }
 
-  const api = Object.freeze({ montar, crearVista, prefijarSelector, renombrarReferencias });
+  const api = Object.freeze({ montar, crearVista, prefijarSelector, renombrarReferencias, organizarSolucionador });
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (global) global.ExercisePanels = api;
 })(typeof window !== "undefined" ? window : null);

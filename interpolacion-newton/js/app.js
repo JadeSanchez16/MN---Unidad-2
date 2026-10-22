@@ -701,7 +701,8 @@ function iniciarAplicacion() {
 
   document.getElementById("restore-button").addEventListener("click", () => {
     cargarDatosIniciales();
-    ejecutarInterpolacion();
+    ocultarResultados();
+    actualizarEstado("Datos originales restaurados. Listo para calcular.", "info");
   });
   document.getElementById("clear-button").addEventListener("click", () => {
     if (!esOriginal) formulario.querySelectorAll('input[type="number"]').forEach((campo) => { campo.value = ""; });
@@ -728,7 +729,7 @@ function iniciarAplicacion() {
 
 iniciarAplicacion();
 if (!esOriginal) document.getElementById("clear-button").click();
-return { activar() { if (esOriginal) { cargarDatosIniciales(); ejecutarInterpolacion(); } } };
+return { activar() { if (esOriginal) { cargarDatosIniciales(); ocultarResultados(); actualizarEstado("Datos originales listos para calcular.", "info"); } } };
 }
 
 if (typeof document !== "undefined") {

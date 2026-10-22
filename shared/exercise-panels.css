@@ -39,7 +39,63 @@
 .original-exercise input[readonly] { background: #f4f6f8; color: #17212b; }
 .original-exercise input[readonly]::-webkit-inner-spin-button { display: none; }
 .exercise-panel[hidden], [hidden] { display: none !important; }
+.new-exercise .solver-workspace > .section-heading { display: block; margin-bottom: 18px; }
+.new-exercise .solver-workspace > .section-heading .section-number,
+.new-exercise .solver-workspace > .section-heading > p { display: none; }
+.new-exercise .solver-workspace > .section-heading h2 { font-size: 1.2rem; }
+.new-exercise .solver-workbench {
+  margin: 0 0 26px;
+  padding: 24px;
+  border-block: 1px solid #cdd7df;
+  background: #fff;
+}
+.solver-entry-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(230px, 1fr); gap: 32px; }
+.solver-entry-layout fieldset { min-width: 0; margin: 0; padding: 18px 0 0; border: 0; border-top: 1px solid #dfe5e9; }
+.solver-entry-layout legend { padding: 0 12px 0 0; color: #12304a; font-size: 1rem; font-weight: 700; }
+.solver-settings { display: flex; flex-direction: column; gap: 20px; }
+.solver-settings > label:not(.toggle-control):not(.solver-toggle) { display: grid; gap: 8px; font-weight: 700; color: #17212b; }
+.new-exercise .solver-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.new-exercise .solver-fields > label:first-child { grid-column: 1 / -1; }
+.new-exercise .solver-parameters { display: grid; grid-template-columns: minmax(0, 1fr); margin: 0; gap: 20px; }
+.new-exercise .solver-settings input[type="number"],
+.new-exercise .solver-settings select { min-width: 0; max-width: none; width: 100%; box-sizing: border-box; min-height: 44px; }
+.new-exercise .input-with-unit { display: block; width: 100%; border: 1px solid #aebbc5; background: #fff; }
+.new-exercise .input-with-unit input { width: 100%; max-width: none; min-height: 44px; }
+.new-exercise .solver-settings .solver-toggle { align-items: flex-start; margin: 0; line-height: 1.5; }
+.new-exercise .solver-data .entry-format { margin: 14px 0 0; font-size: 0.85rem; line-height: 1.6; }
+.new-exercise .solver-data .table-scroll { border-radius: 4px; box-shadow: none; max-height: 460px; }
+.new-exercise .input-table { min-width: 0; table-layout: fixed; }
+.new-exercise .input-table th, .new-exercise .input-table td { padding: 10px 8px; vertical-align: middle; }
+.new-exercise .input-table th:first-child { width: 48px; }
+.new-exercise .input-table th:last-child { width: 86px; }
+.new-exercise .input-table thead th { background: #edf2f5; color: #12304a; }
+.new-exercise .input-table input { min-width: 0; max-width: none; width: 100%; min-height: 42px; box-sizing: border-box; }
+.new-exercise .remove-node-button { min-width: 0; max-width: 100%; width: 100%; min-height: 36px; padding: 7px 4px; border: 1px solid #c58f8b; background: transparent; color: #963b36; font-size: 0.8rem; white-space: normal; overflow-wrap: anywhere; }
+.new-exercise .input-actions { flex-wrap: wrap; justify-content: space-between; }
+.new-exercise .solver-commandbar { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center; margin-top: 24px; padding-top: 20px; border-top: 1px solid #dfe5e9; }
+.solver-utilities { display: flex; flex-wrap: wrap; gap: 10px; }
+.new-exercise .solver-utilities button { border: 1px solid #b8c5ce; background: #fff; color: #12304a; }
+.new-exercise .solver-utilities button:hover { background: #edf2f5; }
+.new-exercise .solver-commandbar button { min-height: 44px; border-radius: 4px; }
+.new-exercise .solver-run-summary .action-title { display: none; }
+.new-exercise .solver-run-summary p { margin: 12px 0 0; font-size: 0.85rem; color: #5c6874; }
+.new-exercise .solver-workbench > .status-message { margin-top: 16px; }
+@media (max-width: 850px) {
+  .solver-entry-layout { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .solver-settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .new-exercise .solver-parameters { grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 @media (max-width: 520px) {
   .exercise-tabs .exercise-tab { padding: 12px 10px; font-size: 0.9rem; }
   .exercise-heading h2 { font-size: 1.2rem; }
+  .new-exercise .solver-workbench { padding: 18px 12px; }
+  .new-exercise .solver-fields, .solver-settings, .new-exercise .solver-parameters { grid-template-columns: minmax(0, 1fr); }
+  .new-exercise .solver-commandbar { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .new-exercise .solver-commandbar > button { width: 100%; }
+  .solver-utilities { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .new-exercise .solver-utilities button { width: 100%; }
+  .new-exercise .input-table th:first-child { width: 36px; }
+  .new-exercise .input-table th:last-child { width: 62px; }
+  .new-exercise .input-table th, .new-exercise .input-table td { padding: 8px 4px; }
+  .new-exercise .remove-node-button { padding: 7px 4px; font-size: 0.75rem; }
 }

@@ -217,21 +217,21 @@ function probarLagrange() {
   assert.match(html, /class="return-home-button" href="\.\.\/\.\.\/index\.html">Retornar al inicio<\/a>/);
   assert.match(html, /<script src="\.\.\/js\/lagrange\.js(?:\?v=[^"]+)?" defer><\/script>[\s\S]*<script src="\.\.\/js\/app\.js(?:\?v=[^"]+)?" defer><\/script>/);
   assert.doesNotMatch(html, /55\.250000|55\.25 ms/);
-  assert.match(codigoAplicacion, /if \(esOriginal\) \{ cargarDatosIniciales\(\); ejecutarInterpolacion\(\); \}/);
+  assert.doesNotMatch(codigoAplicacion, /cargarDatosIniciales\(\);\s*ejecutarInterpolacion\(\);/);
   assert.match(codigoAplicacion, /formulario\.addEventListener\("submit", ejecutarInterpolacion\)/);
   assert.match(codigoAplicacion, /mostrarProcedimiento\(resultado, xEvaluar\)[\s\S]*mostrarSalidas\(\)/);
 
   ["factorizacion-lu", "jacobi", "interpolacion-lagrange", "interpolacion-newton"].forEach((modulo) => {
     const htmlModulo = fs.readFileSync(path.join(raizProyecto, modulo, "html", "index.html"), "utf8");
     assert.match(htmlModulo, /class="return-home-button" href="\.\.\/\.\.\/index\.html">Retornar al inicio<\/a>/);
-    assert.match(htmlModulo, /(?:href="\.\.\/\.\.\/factorizacion-lu\/html\/index\.html\?v=nav4"|aria-current="page">Sesión 6: LU<\/span>)/);
-    assert.match(htmlModulo, /(?:href="\.\.\/\.\.\/jacobi\/html\/index\.html\?v=nav4"|aria-current="page">Sesión 7: Jacobi<\/span>)/);
-    assert.match(htmlModulo, /(?:href="\.\.\/\.\.\/interpolacion-lagrange\/html\/index\.html\?v=nav4"|aria-current="page">Sesión 8: Lagrange<\/span>)/);
-    assert.match(htmlModulo, /(?:href="\.\.\/\.\.\/interpolacion-newton\/html\/index\.html\?v=nav4"|aria-current="page">Sesión 9: Newton<\/span>)/);
+    assert.match(htmlModulo, /(?:href="\.\.\/\.\.\/factorizacion-lu\/html\/index\.html\?v=nav5"|aria-current="page">Sesión 6: LU<\/span>)/);
+    assert.match(htmlModulo, /(?:href="\.\.\/\.\.\/jacobi\/html\/index\.html\?v=nav5"|aria-current="page">Sesión 7: Jacobi<\/span>)/);
+    assert.match(htmlModulo, /(?:href="\.\.\/\.\.\/interpolacion-lagrange\/html\/index\.html\?v=nav5"|aria-current="page">Sesión 8: Lagrange<\/span>)/);
+    assert.match(htmlModulo, /(?:href="\.\.\/\.\.\/interpolacion-newton\/html\/index\.html\?v=nav5"|aria-current="page">Sesión 9: Newton<\/span>)/);
   });
 
   const htmlInicio = fs.readFileSync(path.join(raizProyecto, "index.html"), "utf8");
-  assert.equal((htmlInicio.match(/index\.html\?v=nav4/g) || []).length, 4);
+  assert.equal((htmlInicio.match(/index\.html\?v=nav5/g) || []).length, 4);
 }
 
 function aproximadamenteIgual(actual, esperado, tolerancia = 1e-10) {

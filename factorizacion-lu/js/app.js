@@ -657,7 +657,6 @@ function iniciarAplicacion() {
   });
   document.getElementById("restore-button").addEventListener("click", () => {
     restaurarEjemplo();
-    if (esOriginal) resolverSistema();
   });
   document.getElementById("clear-button").addEventListener("click", () => {
     if (esOriginal) {
@@ -675,7 +674,7 @@ function iniciarAplicacion() {
 
 iniciarAplicacion();
 if (!esOriginal) document.getElementById("clear-button").click();
-return { activar() { if (esOriginal) { restaurarEjemplo(); resolverSistema(); } } };
+return { activar() { if (esOriginal) restaurarEjemplo(); } };
 }
 
 if (typeof document !== "undefined") {

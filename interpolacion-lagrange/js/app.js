@@ -517,7 +517,6 @@ function iniciarAplicacion() {
     cargarDatosIniciales();
     limpiarSalidas();
     actualizarEstado("Ejemplo original restaurado. Listo para calcular.", "info");
-    if (esOriginal) ejecutarInterpolacion();
   });
   window.matchMedia("(max-width: 720px)").addEventListener("change", () => {
     if (!document.getElementById("result-section").hidden) ejecutarInterpolacion();
@@ -527,7 +526,7 @@ function iniciarAplicacion() {
 
 iniciarAplicacion();
 if (!esOriginal) document.getElementById("clear-button").click();
-return { activar() { if (esOriginal) { cargarDatosIniciales(); ejecutarInterpolacion(); } } };
+return { activar() { if (esOriginal) { cargarDatosIniciales(); limpiarSalidas(); actualizarEstado("Datos originales listos para calcular.", "info"); } } };
 }
 
 if (typeof document !== "undefined") {
