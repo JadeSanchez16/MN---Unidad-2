@@ -338,6 +338,14 @@ function comprobarErrorControlado(operacion) {
 // UTILIDADES DE INTERFAZ
 // ==================================================
 
+function crearAplicacion(document, modo) {
+const esOriginal = modo === "original";
+if (!esOriginal) {
+  const titulo = document.getElementById("system-title");
+  titulo.textContent = "Datos del nuevo sistema";
+  document.querySelector(".intro-section .section-heading > p").textContent = "Sistema A·x = b con uno o dos vectores independientes.";
+}
+
 function crearTablaMatriz(matriz) {
   const contenedor = document.createElement("div");
   contenedor.className = "matrix-wrap";
@@ -504,6 +512,7 @@ function ejecutarPruebasInternas(resultados) {
 // ==================================================
 
 function leerSistema() {
+  if (esOriginal) return { matriz: A.map((fila) => [...fila]), b1: [...B1], b2: [...B2] };
   const matriz = entradaLineal.matriz(document.getElementById("input-a").value);
   const b1 = entradaLineal.vector(document.getElementById("input-b1").value, "El vector b₁");
   const b2 = document.getElementById("second-scenario").checked
@@ -522,7 +531,7 @@ function mostrarSistema(matriz, b1, b2) {
   mostrarVector("vector-b1", b1);
   document.getElementById("vector-b2").closest("article").hidden = !b2;
   if (b2) mostrarVector("vector-b2", b2);
-  const original = JSON.stringify(matriz) === JSON.stringify(A) && JSON.stringify(b1) === JSON.stringify(B1);
+  const original = esOriginal && JSON.stringify(matriz) === JSON.stringify(A) && JSON.stringify(b1) === JSON.stringify(B1);
   const ecuaciones = document.getElementById("system-equations");
   if (original) {
     ecuaciones.innerHTML = presentacionOriginal.ecuaciones;
@@ -646,16 +655,31 @@ function iniciarAplicacion() {
   document.getElementById("second-scenario").addEventListener("change", (evento) => {
     document.getElementById("input-b2").disabled = !evento.target.checked;
   });
-  document.getElementById("restore-button").addEventListener("click", restaurarEjemplo);
+  document.getElementById("restore-button").addEventListener("click", () => {
+    restaurarEjemplo();
+    if (esOriginal) resolverSistema();
+  });
   document.getElementById("clear-button").addEventListener("click", () => {
+    if (esOriginal) {
+      limpiarResultados();
+      const estado = document.getElementById("global-status");
+      estado.className = "status-message status-info";
+      estado.textContent = "Resultados borrados. Los datos originales de la tarea se conservan.";
+      return;
+    }
     ["input-a", "input-b1", "input-b2"].forEach((id) => { document.getElementById(id).value = ""; });
     invalidarSistema();
     document.getElementById("input-a").focus();
   });
 }
 
+iniciarAplicacion();
+if (!esOriginal) document.getElementById("clear-button").click();
+return { activar() { if (esOriginal) { restaurarEjemplo(); resolverSistema(); } } };
+}
+
 if (typeof document !== "undefined") {
-  document.addEventListener("DOMContentLoaded", iniciarAplicacion, { once: true });
+  document.addEventListener("DOMContentLoaded", () => window.ExercisePanels.montar(crearAplicacion), { once: true });
 }
 
 if (typeof module !== "undefined" && module.exports) {

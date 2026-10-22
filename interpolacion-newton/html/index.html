@@ -6,17 +6,19 @@
   <meta name="description" content="Solucionador general de interpolación de Newton mediante diferencias divididas.">
   <title>Interpolación de Newton - Sesión 9</title>
   <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="../../shared/exercise-panels.css?v=apartados2">
+  <script src="../../shared/exercise-panels.js?v=apartados2" defer></script>
   <script src="../js/newton.js?v=revision2" defer></script>
-  <script src="../js/app.js?v=general1" defer></script>
+  <script src="../js/app.js?v=apartados3" defer></script>
 </head>
 <body>
   <header class="site-header">
     <div class="header-content">
       <nav class="module-nav" aria-label="Navegación entre sesiones">
         <a href="../../index.html">Inicio</a>
-        <a href="../../factorizacion-lu/html/index.html?v=nav3">Sesión 6: LU</a>
-        <a href="../../jacobi/html/index.html?v=nav3">Sesión 7: Jacobi</a>
-        <a href="../../interpolacion-lagrange/html/index.html?v=nav3">Sesión 8: Lagrange</a>
+        <a href="../../factorizacion-lu/html/index.html?v=nav4">Sesión 6: LU</a>
+        <a href="../../jacobi/html/index.html?v=nav4">Sesión 7: Jacobi</a>
+        <a href="../../interpolacion-lagrange/html/index.html?v=nav4">Sesión 8: Lagrange</a>
         <span aria-current="page">Sesión 9: Newton</span>
       </nav>
       <p class="course-label">Métodos Numéricos - Sesión 9</p>
@@ -32,12 +34,12 @@
           <p class="section-number">01</p>
           <h2 id="data-title">Datos del problema</h2>
         </div>
-        <p>La carga se expresa en centenas de solicitudes por segundo y la latencia en milisegundos.</p>
+        <p data-original-context>La carga se expresa en centenas de solicitudes por segundo y la latencia en milisegundos.</p>
       </div>
 
-      <div class="context-band">
+      <div class="context-band" data-original-context>
         <strong>Contexto</strong>
-        <p>Una API REST crítica necesita estimar su latencia cuando cambia la carga concurrente. Los campos pueden editarse para resolver otros ejercicios.</p>
+        <p>Una API REST crítica necesita estimar su latencia cuando cambia la carga concurrente. Se evalúa la carga de 500 req/s, correspondiente a x = 5, con los cuatro nodos de la tarea.</p>
       </div>
 
       <form id="newton-form" novalidate>
@@ -67,7 +69,7 @@
         <div class="calculation-bar">
           <label for="x-eval">
             <span>Punto a evaluar</span>
-            <span class="input-with-unit"><input id="x-eval" type="number" step="any" required><span>× 100 req/s</span></span>
+            <span class="input-with-unit"><input id="x-eval" type="number" step="any" required><span data-original-unit>× 100 req/s</span></span>
           </label>
           <label for="degree-select">
             <span>Grado del polinomio</span>
@@ -99,7 +101,7 @@
           </div>
           <div>
             <span class="result-label">Latencia estimada</span>
-            <strong><span id="interpolated-value"></span> <small>ms</small></strong>
+            <strong><span id="interpolated-value"></span> <small data-original-unit>ms</small></strong>
           </div>
           <div>
             <span class="result-label">Tipo de cálculo</span>

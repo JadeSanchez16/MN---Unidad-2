@@ -1,0 +1,45 @@
+.exercise-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 30px;
+  border-bottom: 2px solid #d7dfe5;
+}
+.exercise-tabs .exercise-tab {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 54px;
+  margin-bottom: -2px;
+  padding: 14px 20px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: #5c6874;
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.exercise-tabs .exercise-tab[aria-selected="true"] { color: #12304a; border-bottom-color: #d3a124; }
+.exercise-tabs .exercise-tab:hover { background: #edf1f4; }
+.exercise-tabs .exercise-tab:focus-visible { outline: 3px solid #d3a124; outline-offset: -3px; }
+.exercise-heading { padding: 0 0 24px; }
+.exercise-heading h2 { margin: 0; color: #0a2236; font-size: 1.4rem; }
+.original-exercise .entry-format,
+.original-exercise .solver-fields,
+.original-exercise .solver-parameters,
+.original-exercise .solver-toggle,
+.original-exercise .remove-node-button,
+.original-exercise .input-table th:last-child,
+.original-exercise .input-table td:last-child,
+.new-exercise [data-original-context],
+.new-exercise [data-original-unit] { display: none !important; }
+.original-exercise input[readonly] { background: #f4f6f8; color: #17212b; }
+.original-exercise input[readonly]::-webkit-inner-spin-button { display: none; }
+.exercise-panel[hidden], [hidden] { display: none !important; }
+@media (max-width: 520px) {
+  .exercise-tabs .exercise-tab { padding: 12px 10px; font-size: 0.9rem; }
+  .exercise-heading h2 { font-size: 1.2rem; }
+}

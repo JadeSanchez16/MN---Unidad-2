@@ -48,6 +48,17 @@ function nombrePolinomio(cantidadNodos) {
   return `P${convertirSubindice(cantidadNodos - 1)}`;
 }
 
+function crearAplicacion(document, modo) {
+const esOriginal = modo === "original";
+const unidad = esOriginal ? " ms" : "";
+if (esOriginal) document.querySelector(".input-section .section-heading > p").textContent = "Datos experimentales y punto de evaluación del ejercicio original.";
+if (!esOriginal) {
+  document.querySelector(".input-table thead th:nth-child(2)").textContent = "xᵢ";
+  document.querySelector(".input-table thead th:nth-child(3)").textContent = "yᵢ";
+  document.querySelectorAll(".result-label")[1].textContent = "Valor interpolado";
+  document.querySelector("#result-section .section-heading > p").textContent = "Valor del polinomio construido con los nodos de este ejercicio.";
+}
+
 function crearCelda(fila, texto) {
   const celda = document.createElement("td");
   celda.textContent = texto;
@@ -63,11 +74,11 @@ function crearFilaNodo(indice, x = "", y = "") {
   encabezado.textContent = `x${convertirSubindice(indice)}`;
   fila.append(encabezado);
 
-  [["x", x, "Memoria"], ["y", y, "Latencia"]].forEach(([variable, valor, descripcion]) => {
+  [["x", x, esOriginal ? "Memoria" : "Coordenada x"], ["y", y, esOriginal ? "Latencia" : "Valor y"]].forEach(([variable, valor, descripcion]) => {
     const celda = document.createElement("td");
     const etiqueta = document.createElement("label");
     const entrada = document.createElement("input");
-    const id = `${variable}-${indice}`;
+    const id = document.id(`${variable}-${indice}`);
     etiqueta.className = "visually-hidden";
     etiqueta.htmlFor = id;
     etiqueta.textContent = `${descripcion} del nodo ${indice}`;
@@ -76,6 +87,7 @@ function crearFilaNodo(indice, x = "", y = "") {
     entrada.type = "number";
     entrada.step = "any";
     entrada.required = true;
+    entrada.readOnly = esOriginal;
     entrada.value = valor === "" ? "" : String(valor);
     celda.append(etiqueta, entrada);
     fila.append(celda);
@@ -97,9 +109,9 @@ function actualizarConteoNodos() {
     fila.querySelector("th").textContent = `x${convertirSubindice(i)}`;
     ["x", "y"].forEach((variable) => {
       const campo = fila.querySelector(`.node-${variable}`);
-      campo.id = `${variable}-${i}`;
+      campo.id = document.id(`${variable}-${i}`);
       campo.previousElementSibling.htmlFor = campo.id;
-      campo.previousElementSibling.textContent = `${variable === "x" ? "Memoria" : "Latencia"} del nodo ${i}`;
+      campo.previousElementSibling.textContent = `${variable === "x" ? (esOriginal ? "Memoria" : "Coordenada x") : (esOriginal ? "Latencia" : "Valor y")} del nodo ${i}`;
     });
     const boton = fila.querySelector(".remove-node-button");
     boton.disabled = cantidad <= 2;
@@ -122,12 +134,13 @@ function agregarFilaNodo(x = "", y = "") {
 function crearElementoSvg(nombre, atributos = {}) {
   const elemento = document.createElementNS("http://www.w3.org/2000/svg", nombre);
   Object.entries(atributos).forEach(([atributo, valor]) => {
-    elemento.setAttribute(atributo, String(valor));
+    elemento.setAttribute(atributo, atributo === "id" ? document.id(valor) : String(valor));
   });
   return elemento;
 }
 
 function leerFormulario() {
+  if (esOriginal) return { nodos: NODOS_INICIALES.map((nodo) => ({ ...nodo })), xEvaluar: PUNTO_EVALUACION_INICIAL };
   const filas = Array.from(document.querySelectorAll("#nodes-body .node-row"));
   const campoEvaluacion = document.getElementById("x-eval");
   const campos = [
@@ -200,7 +213,7 @@ function mostrarProcedimiento(resultado, xEvaluar) {
     .map(({ y, base }) => `${formatearDetalle(y)}(${formatearNumero(base)})`)
     .join(" + ");
   document.getElementById("final-sum").textContent =
-    `${polinomio}(${formatearDetalle(xEvaluar)}) = ${sumaContribuciones} = ${formatearNumero(resultado.valor)} ms`;
+    `${polinomio}(${formatearDetalle(xEvaluar)}) = ${sumaContribuciones} = ${formatearNumero(resultado.valor)}${unidad}`;
 }
 
 function limpiarProcedimiento() {
@@ -225,7 +238,9 @@ function limpiarSalidas() {
   actualizarEtiquetasPolinomio(cantidadNodos);
   document.getElementById("interpolated-value").textContent = "-";
   limpiarProcedimiento();
-  document.getElementById("lagrange-chart").replaceChildren();
+  const descripcion = crearElementoSvg("desc", { id: "chart-description" });
+  descripcion.textContent = "Sin cálculo vigente.";
+  document.getElementById("lagrange-chart").replaceChildren(descripcion);
   document.getElementById("chart-note").textContent = "";
   document.querySelectorAll(".calculation-output").forEach((seccion) => {
     seccion.hidden = true;
@@ -407,7 +422,7 @@ function dibujarGrafica(nodos, xEvaluar, valorEvaluado) {
     "font-weight": 700,
     "text-anchor": "middle"
   });
-  etiquetaX.textContent = "Memoria asignada (GB)";
+  etiquetaX.textContent = esOriginal ? "Memoria asignada (GB)" : "Coordenada x";
   svg.append(etiquetaX);
 
   const etiquetaY = crearElementoSvg("text", {
@@ -419,12 +434,12 @@ function dibujarGrafica(nodos, xEvaluar, valorEvaluado) {
     "text-anchor": "middle",
     transform: `rotate(-90 22 ${margen.superior + altoUtil / 2})`
   });
-  etiquetaY.textContent = "Latencia media (ms)";
+  etiquetaY.textContent = esOriginal ? "Latencia media (ms)" : "P(x)";
   svg.append(etiquetaY);
 
   const nota = document.getElementById("chart-note");
   const esInterpolacion = xEvaluar >= Math.min(...nodos.map(({ x }) => x)) && xEvaluar <= Math.max(...nodos.map(({ x }) => x));
-  nota.textContent = `${esInterpolacion ? "Interpolación" : "Extrapolación"}: (${formatearNumero(xEvaluar, 2)}, ${formatearNumero(valorEvaluado, 2)} ms).`;
+  nota.textContent = `${esInterpolacion ? "Interpolación" : "Extrapolación"}: (${formatearNumero(xEvaluar, 2)}, ${formatearNumero(valorEvaluado, 2)}${unidad}).`;
   document.getElementById("chart-description-text").textContent = `Polinomio ${nombrePolinomio(nodos.length)}(x) en [${formatearDetalle(xMin)}, ${formatearDetalle(xMax)}].`;
 }
 
@@ -459,6 +474,7 @@ function cargarDatosIniciales() {
 }
 
 function agregarNodo() {
+  if (esOriginal) return;
   const entrada = agregarFilaNodo();
   limpiarSalidas();
   actualizarEstado("Nuevo nodo agregado. Completa sus valores para volver a calcular.", "info");
@@ -486,21 +502,22 @@ function iniciarAplicacion() {
   document.getElementById("add-node-button").addEventListener("click", agregarNodo);
   document.getElementById("nodes-body").addEventListener("click", (evento) => {
     const boton = evento.target.closest(".remove-node-button");
-    if (!boton || boton.disabled) return;
+    if (esOriginal || !boton || boton.disabled) return;
     boton.closest("tr").remove();
     actualizarConteoNodos();
     limpiarSalidas();
     actualizarEstado("Nodo eliminado. Listo para recalcular.", "info");
   });
   document.getElementById("clear-button").addEventListener("click", () => {
-    formulario.querySelectorAll("input").forEach((campo) => { campo.value = ""; });
+    if (!esOriginal) formulario.querySelectorAll("input").forEach((campo) => { campo.value = ""; });
     limpiarSalidas();
-    actualizarEstado("Campos vacíos. Introduce los nodos del nuevo ejercicio.", "info");
+    actualizarEstado(esOriginal ? "Resultados borrados. Los nodos originales se conservan." : "Campos vacíos. Introduce los nodos del nuevo ejercicio.", "info");
   });
   document.getElementById("restore-button").addEventListener("click", () => {
     cargarDatosIniciales();
     limpiarSalidas();
     actualizarEstado("Ejemplo original restaurado. Listo para calcular.", "info");
+    if (esOriginal) ejecutarInterpolacion();
   });
   window.matchMedia("(max-width: 720px)").addEventListener("change", () => {
     if (!document.getElementById("result-section").hidden) ejecutarInterpolacion();
@@ -508,8 +525,13 @@ function iniciarAplicacion() {
   limpiarSalidas();
 }
 
+iniciarAplicacion();
+if (!esOriginal) document.getElementById("clear-button").click();
+return { activar() { if (esOriginal) { cargarDatosIniciales(); ejecutarInterpolacion(); } } };
+}
+
 if (typeof document !== "undefined") {
-  document.addEventListener("DOMContentLoaded", iniciarAplicacion, { once: true });
+  document.addEventListener("DOMContentLoaded", () => window.ExercisePanels.montar(crearAplicacion), { once: true });
 }
 
 if (typeof module !== "undefined" && module.exports) {

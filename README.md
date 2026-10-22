@@ -31,7 +31,16 @@ numéricas no son cotas del error de interpolación de una función desconocida.
 
 ## Ejercicios nuevos
 
-Las cuatro sesiones permiten editar, calcular, limpiar y restaurar sus ejemplos.
+Cada sesión abre **Ejercicio original de la tarea**, con sus datos protegidos,
+contexto, procedimiento y resultados calculados por el mismo algoritmo.
+**Resolver un nuevo ejercicio** tiene campos y resultados independientes.
+Cambiar entre ambos apartados conserva el ejercicio nuevo durante la visita
+y recupera la tarea original, sin mezclar datos ni resultados.
+
+En el apartado nuevo se puede editar, calcular, limpiar y restaurar una copia
+de los datos originales. En la tarea, limpiar borra únicamente los resultados;
+calcular o restaurar vuelve a obtenerlos sin cambiar los datos académicos.
+Los resultados nuevos aparecen después de calcular y se invalidan al editar.
 En LU y Jacobi la dimensión se deduce de la matriz: cada fila ocupa una línea
 y los coeficientes se separan por espacios. Los vectores admiten espacios o
 saltos de línea. Se usa punto decimal y se acepta notación científica.

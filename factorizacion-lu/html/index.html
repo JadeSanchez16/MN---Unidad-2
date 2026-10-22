@@ -7,8 +7,10 @@
   <title>Factorización LU mediante Doolittle</title>
   <link rel="stylesheet" href="../css/styles.css">
   <link rel="stylesheet" href="../../shared/solver-input.css?v=general1">
+  <link rel="stylesheet" href="../../shared/exercise-panels.css?v=apartados2">
   <script src="../../shared/linear-input.js?v=general1" defer></script>
-  <script src="../js/app.js?v=general1" defer></script>
+  <script src="../../shared/exercise-panels.js?v=apartados2" defer></script>
+  <script src="../js/app.js?v=apartados2" defer></script>
 </head>
 <body>
   <header class="site-header">
@@ -16,9 +18,9 @@
       <nav class="module-nav" aria-label="Navegación entre sesiones">
         <a href="../../index.html">Inicio</a>
         <span aria-current="page">Sesión 6: LU</span>
-        <a href="../../jacobi/html/index.html?v=nav3">Sesión 7: Jacobi</a>
-        <a href="../../interpolacion-lagrange/html/index.html?v=nav3">Sesión 8: Lagrange</a>
-        <a href="../../interpolacion-newton/html/index.html?v=nav3">Sesión 9: Newton</a>
+        <a href="../../jacobi/html/index.html?v=nav4">Sesión 7: Jacobi</a>
+        <a href="../../interpolacion-lagrange/html/index.html?v=nav4">Sesión 8: Lagrange</a>
+        <a href="../../interpolacion-newton/html/index.html?v=nav4">Sesión 9: Newton</a>
       </nav>
       <p class="course-label">Métodos Numéricos - Sesión 6</p>
       <h1>Factorización LU mediante Doolittle</h1>
@@ -36,10 +38,10 @@
         <p>La matriz de acoplamiento permanece constante mientras los vectores de tráfico cambian.</p>
       </div>
 
-      <p class="context-summary" id="problem-context">
+      <p class="context-summary" id="problem-context" data-original-context>
         El clúster consta de tres microservicios (S<sub>1</sub>, S<sub>2</sub> y S<sub>3</sub>) conectados mediante el modelo lineal A · x = b.
       </p>
-      <dl class="model-definitions">
+      <dl class="model-definitions" data-original-context>
         <div>
           <dt>A</dt>
           <dd>Matriz de coeficientes de transferencia y acoplamiento entre servicios.</dd>

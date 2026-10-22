@@ -128,9 +128,46 @@ function formatearFormaNewton(resultado) {
   return `${nombrePolinomio(resultado.grado)}(x) = ${partes.join(" ")}`;
 }
 
+function nombreDiferencia(X, inicio, orden) {
+  return `f[${X.slice(inicio, inicio + orden + 1).map((x) => formatearDecimal(x)).join(", ")}]`;
+}
+
+function calcularRangoGrafico(valores) {
+  let minimo = Math.min(...valores);
+  let maximo = Math.max(...valores);
+  const amplitud = maximo - minimo;
+  const margen = amplitud === 0 ? Math.max(1, Math.abs(minimo) * 0.12) : amplitud * 0.12;
+  minimo -= margen;
+  maximo += margen;
+  if (!Number.isFinite(minimo) || !Number.isFinite(maximo) || !Number.isFinite(maximo - minimo) || !(maximo > minimo)) {
+    throw new ValidationError("El rango de la gráfica excede la precisión numérica disponible; cambia la escala de los datos.");
+  }
+  return [minimo, maximo];
+}
+
+function formatearEje(valor, amplitud) {
+  const absoluto = Math.abs(valor);
+  if (absoluto > 0 && (absoluto < 0.001 || absoluto >= 1e7)) {
+    const precision = Math.min(15, Math.max(2, Math.ceil(Math.log10(Math.max(1, absoluto / amplitud))) + 2));
+    return valor.toExponential(precision).replace(/(\.\d*?)0+e/, "$1e").replace(/\.e/, "e");
+  }
+  const decimales = Math.min(15, Math.max(0, 2 - Math.floor(Math.log10(amplitud))));
+  return formatearDecimal(valor, decimales);
+}
+
+function crearAplicacion(document, modo) {
+const esOriginal = modo === "original";
+const unidad = esOriginal ? " ms" : "";
+if (!esOriginal) {
+  document.getElementById("data-title").textContent = "Datos del nuevo ejercicio";
+  document.querySelector(".input-table thead th:nth-child(2)").textContent = "xᵢ";
+  document.querySelector(".input-table thead th:nth-child(3)").textContent = "yᵢ";
+  document.querySelectorAll(".result-label")[1].textContent = "Valor interpolado";
+}
+
 function crearElementoSvg(nombre, atributos = {}) {
   const elemento = document.createElementNS("http://www.w3.org/2000/svg", nombre);
-  Object.entries(atributos).forEach(([atributo, valor]) => elemento.setAttribute(atributo, String(valor)));
+  Object.entries(atributos).forEach(([atributo, valor]) => elemento.setAttribute(atributo, atributo === "id" ? document.id(valor) : String(valor)));
   return elemento;
 }
 
@@ -154,11 +191,11 @@ function crearFilaNodo(indice, x = "", y = "") {
   encabezado.textContent = `x${convertirSubindice(indice)}`;
   fila.append(encabezado);
 
-  [["x", x, "Carga"], ["y", y, "Latencia"]].forEach(([variable, valor, descripcion]) => {
+  [["x", x, esOriginal ? "Carga" : "Coordenada x"], ["y", y, esOriginal ? "Latencia" : "Valor y"]].forEach(([variable, valor, descripcion]) => {
     const celda = document.createElement("td");
     const etiqueta = document.createElement("label");
     const entrada = document.createElement("input");
-    const id = `${variable}-${indice}`;
+    const id = document.id(`${variable}-${indice}`);
     etiqueta.className = "visually-hidden";
     etiqueta.htmlFor = id;
     etiqueta.textContent = `${descripcion} del nodo ${indice}`;
@@ -167,6 +204,7 @@ function crearFilaNodo(indice, x = "", y = "") {
     entrada.type = "number";
     entrada.step = "any";
     entrada.required = true;
+    entrada.readOnly = esOriginal;
     entrada.value = valor === "" ? "" : String(valor);
     celda.append(etiqueta, entrada);
     fila.append(celda);
@@ -187,10 +225,10 @@ function reindexarFilas() {
   const filas = Array.from(document.querySelectorAll("#nodes-body .node-row"));
   filas.forEach((fila, indice) => {
     fila.querySelector(".node-label").textContent = `x${convertirSubindice(indice)}`;
-    [["x", "Carga"], ["y", "Latencia"]].forEach(([variable, descripcion]) => {
+    [["x", esOriginal ? "Carga" : "Coordenada x"], ["y", esOriginal ? "Latencia" : "Valor y"]].forEach(([variable, descripcion]) => {
       const entrada = fila.querySelector(`.node-${variable}`);
       const etiqueta = entrada.previousElementSibling;
-      entrada.id = `${variable}-${indice}`;
+      entrada.id = document.id(`${variable}-${indice}`);
       etiqueta.htmlFor = entrada.id;
       etiqueta.textContent = `${descripcion} del nodo ${indice}`;
     });
@@ -228,6 +266,10 @@ function agregarFilaNodo(x = "", y = "", preferirMaximo = true) {
 }
 
 function leerFormulario() {
+  if (esOriginal) return {
+    X: NODOS_INICIALES.map(({ x }) => x), Y: NODOS_INICIALES.map(({ y }) => y),
+    xEvaluar: PUNTO_EVALUACION_INICIAL, grado: NODOS_INICIALES.length - 1
+  };
   const filas = Array.from(document.querySelectorAll("#nodes-body .node-row"));
   const campos = filas.flatMap((fila) => [fila.querySelector(".node-x"), fila.querySelector(".node-y")]);
   const campoEvaluacion = document.getElementById("x-eval");
@@ -251,7 +293,9 @@ function actualizarEstado(mensaje, tipo) {
 
 function ocultarResultados() {
   document.getElementById("calculation-output").hidden = true;
-  document.getElementById("newton-chart").replaceChildren();
+  const descripcion = crearElementoSvg("desc", { id: "chart-description" });
+  descripcion.textContent = "Sin cálculo vigente.";
+  document.getElementById("newton-chart").replaceChildren(descripcion);
 }
 
 function mostrarResumen(resultado, xEvaluar) {
@@ -270,10 +314,6 @@ function mostrarResumen(resultado, xEvaluar) {
     parrafo.textContent = `Advertencia: ${mensaje}`;
     advertencias.append(parrafo);
   });
-}
-
-function nombreDiferencia(X, inicio, orden) {
-  return `f[${X.slice(inicio, inicio + orden + 1).map((x) => formatearDecimal(x)).join(", ")}]`;
 }
 
 function mostrarDiferencias(resultado) {
@@ -389,7 +429,7 @@ function mostrarEvaluacion(resultado, xEvaluar) {
     lista.append(item);
   });
   document.getElementById("evaluation-result").textContent =
-    `${nombrePolinomio(resultado.grado)}(${formatearDecimal(xEvaluar)}) = ${formatearExactoConDecimal(resultado.valor)} ms`;
+    `${nombrePolinomio(resultado.grado)}(${formatearDecimal(xEvaluar)}) = ${formatearExactoConDecimal(resultado.valor)}${unidad}`;
 }
 
 function mostrarValidacion(resultado) {
@@ -443,32 +483,9 @@ function mostrarComparacion(resultados, gradoSeleccionado, xEvaluar) {
     }
     crearCelda(fila, resultado.X.map((x) => `(${formatearDecimal(x)}, ${formatearDecimal(resultado.Y[resultado.X.indexOf(x)])})`).join(", "));
     crearCelda(fila, formatearPolinomio(resultado.coeficientesEstandar));
-    crearCelda(fila, `${nombrePolinomio(resultado.grado)}(${formatearDecimal(xEvaluar)}) = ${formatearDecimal(resultado.valor, 6)} ms`);
+    crearCelda(fila, `${nombrePolinomio(resultado.grado)}(${formatearDecimal(xEvaluar)}) = ${formatearDecimal(resultado.valor, 6)}${unidad}`);
     cuerpo.append(fila);
   });
-}
-
-function calcularRangoGrafico(valores) {
-  let minimo = Math.min(...valores);
-  let maximo = Math.max(...valores);
-  const amplitud = maximo - minimo;
-  const margen = amplitud === 0 ? Math.max(1, Math.abs(minimo) * 0.12) : amplitud * 0.12;
-  minimo -= margen;
-  maximo += margen;
-  if (!Number.isFinite(minimo) || !Number.isFinite(maximo) || !Number.isFinite(maximo - minimo) || !(maximo > minimo)) {
-    throw new ValidationError("El rango de la gráfica excede la precisión numérica disponible; cambia la escala de los datos.");
-  }
-  return [minimo, maximo];
-}
-
-function formatearEje(valor, amplitud) {
-  const absoluto = Math.abs(valor);
-  if (absoluto > 0 && (absoluto < 0.001 || absoluto >= 1e7)) {
-    const precision = Math.min(15, Math.max(2, Math.ceil(Math.log10(Math.max(1, absoluto / amplitud))) + 2));
-    return valor.toExponential(precision).replace(/(\.\d*?)0+e/, "$1e").replace(/\.e/, "e");
-  }
-  const decimales = Math.min(15, Math.max(0, 2 - Math.floor(Math.log10(amplitud))));
-  return formatearDecimal(valor, decimales);
 }
 
 function dibujarGrafica(resultadoSeleccionado, resultados, nodosEntrada, xEvaluar, superponer) {
@@ -570,10 +587,10 @@ function dibujarGrafica(resultadoSeleccionado, resultados, nodosEntrada, xEvalua
   svg.append(etiquetaPunto);
 
   const etiquetaX = crearElementoSvg("text", { x: margen.izquierda + anchoUtil / 2, y: alto - 18, fill: "#17212b", "font-size": movil ? 13 : 16, "font-weight": 700, "text-anchor": "middle" });
-  etiquetaX.textContent = "Carga de peticiones (100 req/s)";
+  etiquetaX.textContent = esOriginal ? "Carga de peticiones (100 req/s)" : "Coordenada x";
   svg.append(etiquetaX);
   const etiquetaY = crearElementoSvg("text", { x: movil ? 17 : 23, y: margen.superior + altoUtil / 2, fill: "#17212b", "font-size": movil ? 13 : 16, "font-weight": 700, "text-anchor": "middle", transform: `rotate(-90 ${movil ? 17 : 23} ${margen.superior + altoUtil / 2})` });
-  etiquetaY.textContent = "Latencia de respuesta (ms)";
+  etiquetaY.textContent = esOriginal ? "Latencia de respuesta (ms)" : "P(x)";
   svg.append(etiquetaY);
 
   const leyenda = document.getElementById("chart-legend");
@@ -597,7 +614,7 @@ function dibujarGrafica(resultadoSeleccionado, resultados, nodosEntrada, xEvalua
   document.getElementById("chart-description-text").textContent =
     `${nombrePolinomio(resultadoSeleccionado.grado)}(x), rango automático y coordenadas numéricas reales.`;
   document.getElementById("chart-note").textContent =
-    `${resultadoSeleccionado.clasificacion === "interpolación" ? "Interpolación" : "Extrapolación"}: (${formatearDecimal(xEvaluar, 3)}, ${formatearDecimal(resultadoSeleccionado.valor, 3)} ms).`;
+    `${resultadoSeleccionado.clasificacion === "interpolación" ? "Interpolación" : "Extrapolación"}: (${formatearDecimal(xEvaluar, 3)}, ${formatearDecimal(resultadoSeleccionado.valor, 3)}${unidad}).`;
 }
 
 function ejecutarInterpolacion(evento) {
@@ -627,7 +644,7 @@ function ejecutarInterpolacion(evento) {
     mostrarComparacion(resultados, grado, xEvaluar);
     dibujarGrafica(resultado, resultados, nodosEntrada, xEvaluar, document.getElementById("overlay-degrees").checked);
     document.getElementById("calculation-output").hidden = false;
-    actualizarEstado(`Cálculo completado: ${nombrePolinomio(grado)}(${formatearDecimal(xEvaluar)}) = ${formatearDecimal(resultado.valor, 6)} ms.`, "success");
+    actualizarEstado(`Cálculo completado: ${nombrePolinomio(grado)}(${formatearDecimal(xEvaluar)}) = ${formatearDecimal(resultado.valor, 6)}${unidad}.`, "success");
   } catch (error) {
     ocultarResultados();
     if (!(error instanceof ValidationError)) {
@@ -638,7 +655,7 @@ function ejecutarInterpolacion(evento) {
 }
 
 function marcarDatosPendientes(evento) {
-  if (!evento.target.matches(".node-x, .node-y, #x-eval")) {
+  if (!evento.target.matches(document.selector(".node-x, .node-y, #x-eval"))) {
     return;
   }
   if (!document.getElementById("calculation-output").hidden) {
@@ -663,6 +680,7 @@ function iniciarAplicacion() {
   formulario.addEventListener("input", marcarDatosPendientes);
 
   document.getElementById("add-node-button").addEventListener("click", () => {
+    if (esOriginal) return;
     const entrada = agregarFilaNodo();
     ocultarResultados();
     actualizarEstado("Nuevo punto agregado. Completa X e Y antes de calcular.", "info");
@@ -671,7 +689,7 @@ function iniciarAplicacion() {
 
   document.getElementById("nodes-body").addEventListener("click", (evento) => {
     const boton = evento.target.closest(".remove-node-button");
-    if (!boton) {
+    if (esOriginal || !boton || boton.disabled) {
       return;
     }
     boton.closest("tr").remove();
@@ -686,9 +704,9 @@ function iniciarAplicacion() {
     ejecutarInterpolacion();
   });
   document.getElementById("clear-button").addEventListener("click", () => {
-    formulario.querySelectorAll('input[type="number"]').forEach((campo) => { campo.value = ""; });
+    if (!esOriginal) formulario.querySelectorAll('input[type="number"]').forEach((campo) => { campo.value = ""; });
     ocultarResultados();
-    actualizarEstado("Campos vacíos. Introduce los nodos y el punto a evaluar.", "info");
+    actualizarEstado(esOriginal ? "Resultados borrados. Los nodos originales se conservan." : "Campos vacíos. Introduce los nodos y el punto a evaluar.", "info");
   });
 
   document.getElementById("degree-select").addEventListener("change", () => {
@@ -708,8 +726,13 @@ function iniciarAplicacion() {
   });
 }
 
+iniciarAplicacion();
+if (!esOriginal) document.getElementById("clear-button").click();
+return { activar() { if (esOriginal) { cargarDatosIniciales(); ejecutarInterpolacion(); } } };
+}
+
 if (typeof document !== "undefined") {
-  document.addEventListener("DOMContentLoaded", iniciarAplicacion, { once: true });
+  document.addEventListener("DOMContentLoaded", () => window.ExercisePanels.montar(crearAplicacion), { once: true });
 }
 
 if (typeof module !== "undefined" && module.exports) {

@@ -229,6 +229,21 @@ function formatearDetalle(numero) {
 // PRESENTACIÓN
 // ==================================================
 
+function describirIteracion(matriz, b, anterior, actual) {
+  return matriz.map((fila, i) => {
+    const productos = fila.flatMap((coeficiente, j) => j === i || coeficiente === 0
+      ? [] : [`(${formatearDetalle(coeficiente)})(${formatearDetalle(anterior[j])})`]);
+    return `x${i + 1} = (${formatearDetalle(b[i])} − [${productos.join(" + ") || "0"}]) / ${formatearDetalle(fila[i])} = ${formatearDetalle(actual[i])}`;
+  });
+}
+
+function crearAplicacion(document, modo) {
+const esOriginal = modo === "original";
+if (!esOriginal) {
+  document.getElementById("system-title").textContent = "Datos del nuevo sistema";
+  document.querySelector(".intro-section .section-heading > p").textContent = "Sistema A·x = b con datos y parámetros independientes de la tarea.";
+}
+
 function crearTablaMatriz(matriz, etiqueta) {
   const contenedor = document.createElement("div");
   contenedor.className = "matrix-wrap";
@@ -347,18 +362,14 @@ function actualizarEstadoGlobal(mensaje, correcto) {
   estado.textContent = mensaje;
 }
 
-function describirIteracion(matriz, b, anterior, actual) {
-  return matriz.map((fila, i) => {
-    const productos = fila.flatMap((coeficiente, j) => j === i || coeficiente === 0
-      ? [] : [`(${formatearDetalle(coeficiente)})(${formatearDetalle(anterior[j])})`]);
-    return `x${i + 1} = (${formatearDetalle(b[i])} − [${productos.join(" + ") || "0"}]) / ${formatearDetalle(fila[i])} = ${formatearDetalle(actual[i])}`;
-  });
-}
-
 let vistaOriginal;
 let datosOperaciones = null;
 
 function leerSistema() {
+  if (esOriginal) return {
+    matriz: A_JACOBI.map((fila) => [...fila]), b: [...B_JACOBI], inicial: [...X_INICIAL],
+    tolerancia: TOLERANCIA_JACOBI, maxIteraciones: MAX_ITERACIONES
+  };
   const matriz = entradaLineal.matriz(document.getElementById("input-a").value);
   const b = entradaLineal.vector(document.getElementById("input-b").value, "El vector b");
   const inicial = entradaLineal.vector(document.getElementById("input-x0").value, "El vector inicial");
@@ -371,9 +382,8 @@ function leerSistema() {
 
 function mostrarSistema(datos) {
   const { matriz, b, inicial, tolerancia, maxIteraciones } = datos;
-  const original = JSON.stringify([matriz, b]) === JSON.stringify([A_JACOBI, B_JACOBI]);
+  const original = esOriginal && JSON.stringify([matriz, b]) === JSON.stringify([A_JACOBI, B_JACOBI]);
   document.getElementById("system-title").textContent = original ? vistaOriginal.titulo : `Sistema de ${matriz.length} ${matriz.length === 1 ? "incógnita" : "incógnitas"}`;
-  document.querySelector(".subtitle").textContent = original ? vistaOriginal.subtitulo : "Resolución iterativa de un sistema lineal";
   document.querySelector(".intro-section .section-heading > p").textContent = original
     ? vistaOriginal.contexto : "Sistema A·x = b con el vector inicial y los parámetros ingresados.";
   const ecuaciones = document.getElementById("system-equations");
@@ -408,6 +418,7 @@ function mostrarSistema(datos) {
 }
 
 function invalidarSistema() {
+  if (!esOriginal) document.getElementById("system-title").textContent = "Datos del nuevo sistema";
   ["results", "system-equations", "system-preview", "convergence-section", "iteration-formulas"].forEach((id) => {
     document.getElementById(id).hidden = true;
   });
@@ -465,15 +476,24 @@ function iniciarAplicacion() {
     ecuaciones: document.getElementById("system-equations").innerHTML,
     formulas: document.getElementById("iteration-formulas").innerHTML,
     titulo: document.getElementById("system-title").textContent,
-    subtitulo: document.querySelector(".subtitle").textContent,
     contexto: document.querySelector(".intro-section .section-heading > p").textContent
   };
   restaurarEjemplo();
   const formulario = document.getElementById("system-form");
   formulario.addEventListener("submit", ejecutarJacobi);
   formulario.addEventListener("input", invalidarSistema);
-  document.getElementById("restore-button").addEventListener("click", restaurarEjemplo);
+  document.getElementById("restore-button").addEventListener("click", () => {
+    restaurarEjemplo();
+    if (esOriginal) ejecutarJacobi();
+  });
   document.getElementById("clear-button").addEventListener("click", () => {
+    if (esOriginal) {
+      document.getElementById("results").hidden = true;
+      const estado = document.getElementById("global-status");
+      estado.className = "status-message status-info";
+      estado.textContent = "Resultados borrados. Los datos originales de la tarea se conservan.";
+      return;
+    }
     formulario.querySelectorAll("textarea, input").forEach((campo) => { campo.value = ""; });
     invalidarSistema();
     document.getElementById("input-a").focus();
@@ -492,8 +512,13 @@ function iniciarAplicacion() {
   });
 }
 
+iniciarAplicacion();
+if (!esOriginal) document.getElementById("clear-button").click();
+return { activar() { if (esOriginal) { restaurarEjemplo(); ejecutarJacobi(); } } };
+}
+
 if (typeof document !== "undefined") {
-  document.addEventListener("DOMContentLoaded", iniciarAplicacion, { once: true });
+  document.addEventListener("DOMContentLoaded", () => window.ExercisePanels.montar(crearAplicacion), { once: true });
 }
 
 if (typeof module !== "undefined" && module.exports) {

@@ -6,18 +6,20 @@
   <meta name="description" content="Interpolación de Lagrange con nodos dinámicos para estimar la latencia de un microservicio.">
   <title>Interpolación de Lagrange - Sesión 8</title>
   <link rel="stylesheet" href="../css/styles.css?v=general1">
+  <link rel="stylesheet" href="../../shared/exercise-panels.css?v=apartados2">
+  <script src="../../shared/exercise-panels.js?v=apartados2" defer></script>
   <script src="../js/lagrange.js?v=general1" defer></script>
-  <script src="../js/app.js?v=general1" defer></script>
+  <script src="../js/app.js?v=apartados3" defer></script>
 </head>
 <body>
   <header class="site-header">
     <div class="header-content">
       <nav class="module-nav" aria-label="Navegación entre sesiones">
         <a href="../../index.html">Inicio</a>
-        <a href="../../factorizacion-lu/html/index.html?v=nav3">Sesión 6: LU</a>
-        <a href="../../jacobi/html/index.html?v=nav3">Sesión 7: Jacobi</a>
+        <a href="../../factorizacion-lu/html/index.html?v=nav4">Sesión 6: LU</a>
+        <a href="../../jacobi/html/index.html?v=nav4">Sesión 7: Jacobi</a>
         <span aria-current="page">Sesión 8: Lagrange</span>
-        <a href="../../interpolacion-newton/html/index.html?v=nav3">Sesión 9: Newton</a>
+        <a href="../../interpolacion-newton/html/index.html?v=nav4">Sesión 9: Newton</a>
       </nav>
       <p class="course-label">Métodos Numéricos - Sesión 8</p>
       <h1>Interpolación polinómica de Lagrange</h1>
@@ -35,6 +37,7 @@
         <p>Los nodos y el punto de evaluación pueden modificarse para ejecutar nuevos cálculos.</p>
       </div>
 
+      <p data-original-context>Estimar la latencia media en x = 6 GB a partir de los cuatro nodos experimentales de memoria y latencia indicados en la tabla.</p>
       <form id="lagrange-form" novalidate>
         <div class="table-scroll">
           <table class="input-table">
@@ -60,7 +63,7 @@
         <div class="calculation-bar">
           <label for="x-eval">
             <span>Punto a evaluar</span>
-            <span class="input-with-unit"><input id="x-eval" type="number" step="any" required><span>GB</span></span>
+            <span class="input-with-unit"><input id="x-eval" type="number" step="any" required><span data-original-unit>GB</span></span>
           </label>
           <button type="submit">Calcular interpolación</button>
         </div>
@@ -84,7 +87,7 @@
         </div>
         <div>
           <span class="result-label">Latencia estimada</span>
-          <strong><span id="interpolated-value">-</span> <small>ms</small></strong>
+          <strong><span id="interpolated-value">-</span> <small data-original-unit>ms</small></strong>
         </div>
       </div>
     </section>
